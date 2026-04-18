@@ -11,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
   
   // Get auth context
@@ -35,23 +36,30 @@ export default function Login() {
     e.stopPropagation();
     
     if (!email.trim()) {
+      setAuthError(null);
       notificationService.error('Please enter your email address');
       return;
     }
     
     if (!password.trim()) {
+      setAuthError(null);
       notificationService.error('Please enter your password');
       return;
     }
     
     setLoading(true);
+    setAuthError(null);
     try {
       await login(email.trim(), password);
       notificationService.success('Welcome back!');
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          'Login failed. Please check your credentials.';
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        (Array.isArray(error?.response?.data?.errors) ? error.response.data.errors.join(', ') : null) ||
+        error?.message ||
+        'Login failed. Please check your credentials.';
+      setAuthError(errorMessage);
       notificationService.error(errorMessage);
     } finally {
       setLoading(false);
@@ -109,6 +117,15 @@ export default function Login() {
               onSubmit={handleSubmit}
               noValidate
             >
+              {authError && (
+                <div
+                  className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+                  role="alert"
+                >
+                  {authError}
+                </div>
+              )}
+
               <div>
                 <label
                   htmlFor="email"
@@ -137,7 +154,10 @@ export default function Login() {
                     type="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (authError) setAuthError(null);
+                    }}
                     className="block w-full pl-10 pr-3 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-button/50 focus:border-button/50 transition-all bg-primary/60 text-foreground placeholder-foreground/50"
                     placeholder="you@example.com"
                   />
@@ -172,7 +192,10 @@ export default function Login() {
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (authError) setAuthError(null);
+                    }}
                     className="block w-full pl-10 pr-12 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-button/50 focus:border-button/50 transition-all bg-primary/60 text-foreground placeholder-foreground/50"
                     placeholder="Enter your password"
                   />

@@ -42,16 +42,21 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Log error for debugging
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    });
-    
     const url = String(error.config?.url ?? '');
+    const isExpectedAuth401 =
+      error.response?.status === 401 &&
+      (url.includes('/auth/me') || url.includes('/auth/login') || url.includes('/auth/register'));
+
+    if (!isExpectedAuth401) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data
+      });
+    }
+
     if (error.response?.status === 401) {
       // Guest/public flows must not be redirected to login.
       if (
