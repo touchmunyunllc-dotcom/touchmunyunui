@@ -124,9 +124,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     const savedCart = Cookies.get('cart');
     if (savedCart) {
       try {
-        const parsed = JSON.parse(savedCart) as CartItem[];
-        setItems(parsed);
-        updateGuestSummary(parsed);
+        const parsed = JSON.parse(savedCart) as Array<Partial<CartItem>>;
+        const normalized: CartItem[] = parsed
+          .map((item, index) => {
+            const productId = String(item.productId ?? item.id ?? '').trim();
+            const lineId = String(item.id ?? `${productId}-${index}`).trim();
+
+            return {
+              id: lineId,
+              productId,
+              name: String(item.name ?? '').trim(),
+              price: Number(item.price ?? 0),
+              quantity: Number(item.quantity ?? 0),
+              image: String(item.image ?? ''),
+              selectedColor: item.selectedColor,
+              selectedSize: item.selectedSize,
+            };
+          })
+          .filter((item) => item.productId.length > 0 && item.quantity > 0);
+
+        setItems(normalized);
+        updateGuestSummary(normalized);
       } catch (error) {
         console.error('Failed to parse cart from cookies', error);
       }

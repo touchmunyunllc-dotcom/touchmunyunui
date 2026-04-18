@@ -17,7 +17,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 const CURRENCY = 'usd';
 
 function isValidUuid(id: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
 }
 
 export default function GuestCheckoutPage() {
@@ -48,7 +48,7 @@ export default function GuestCheckoutPage() {
 
   const mapItems = useCallback(() => {
     return items.map((i) => ({
-      productId: i.productId,
+      productId: String(i.productId ?? '').trim(),
       name: i.name,
       price: i.price,
       quantity: i.quantity,
@@ -58,7 +58,7 @@ export default function GuestCheckoutPage() {
   const runPreview = useCallback(async () => {
     if (items.length === 0) return;
     for (const i of items) {
-      if (!isValidUuid(i.productId)) {
+      if (!isValidUuid(String(i.productId ?? ''))) {
         notificationService.error('Invalid product in cart. Please remove the item and add it again.');
         return;
       }
