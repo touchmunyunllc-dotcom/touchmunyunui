@@ -1,0 +1,289 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Icons.com style - Black background, white text, red/grey/gold accents */
+  --color-background: 0, 0, 0; /* Pure black */
+  --gradient-background: #000000;
+  --color-foreground: 255, 255, 255; /* Pure white */
+  --color-background-contrast: 26, 26, 26; /* Dark grey for contrast */
+  --color-shadow: 0, 0, 0;
+  --color-button: 220, 38, 38; /* Red-600 */
+  --color-button-text: 255, 255, 255;
+  --color-secondary-button: 107, 114, 128; /* Grey-500 */
+  --color-secondary-button-text: 255, 255, 255;
+  --color-link: 220, 38, 38; /* Red for links */
+  --color-badge-foreground: 255, 255, 255;
+  --color-badge-background: 26, 26, 26; /* Dark grey */
+  --color-badge-border: 220, 38, 38; /* Red border */
+  --payment-terms-background-color: rgb(26, 26, 26);
+  
+  /* Accent colors */
+  --color-red: 220, 38, 38; /* Red-600 */
+  --color-gold: 217, 119, 6; /* Gold-600 */
+  --color-grey: 107, 114, 128; /* Grey-500 */
+  
+  /* Legacy variables for compatibility */
+  --foreground-rgb: var(--color-foreground);
+  --background-start-rgb: var(--color-background);
+  --background-end-rgb: var(--color-background-contrast);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Same colors - already dark theme */
+    --color-background: 0, 0, 0;
+    --gradient-background: #000000;
+    --color-foreground: 255, 255, 255;
+    --color-background-contrast: 26, 26, 26;
+    --color-shadow: 0, 0, 0;
+    --color-button: 220, 38, 38;
+    --color-button-text: 255, 255, 255;
+    --color-secondary-button: 107, 114, 128;
+    --color-secondary-button-text: 255, 255, 255;
+    --color-link: 220, 38, 38;
+    --color-badge-foreground: 255, 255, 255;
+    --color-badge-background: 26, 26, 26;
+    --color-badge-border: 220, 38, 38;
+    --payment-terms-background-color: rgb(26, 26, 26);
+    
+    --color-red: 220, 38, 38;
+    --color-gold: 217, 119, 6;
+    --color-grey: 107, 114, 128;
+    
+    --foreground-rgb: var(--color-foreground);
+    --background-start-rgb: var(--color-background);
+    --background-end-rgb: var(--color-background-contrast);
+  }
+}
+
+body {
+  color: rgb(var(--color-foreground)); /* Pure white text */
+  background: #000000; /* Pure black background - icons.com style */
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+/* Modern Hero Animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes text-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes sports-shimmer {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 200px 200px;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.8s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s ease-out;
+}
+
+.animate-text-reveal {
+  animation: text-reveal 1s ease-out;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Staggered animation delays */
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-500 {
+  animation-delay: 0.5s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Coupon Slider Animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Collection Banner Typography */
+.letter-spacing-wide {
+  letter-spacing: 0.15em;
+}
+
+/* Premium Black Background Utilities */
+.bg-premium-black {
+  background: linear-gradient(to bottom, #0d0d0d, #0a0a0a, #050505);
+}
+
+.bg-premium-black-gradient {
+  background: 
+    radial-gradient(ellipse at top, rgba(13, 13, 13, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(11, 11, 15, 0.3) 0%, transparent 50%),
+    linear-gradient(to bottom, #0d0d0d, #0a0a0a, #050505);
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+

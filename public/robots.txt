@@ -1,0 +1,23 @@
+# robots.txt for Touch Munyun
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /checkout
+Disallow: /cart
+Disallow: /orders
+Disallow: /order-success
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Sitemap
+Sitemap: https://touchmunyun.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
