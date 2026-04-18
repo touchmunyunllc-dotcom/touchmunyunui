@@ -332,7 +332,7 @@ export default function GuestCheckoutPage() {
                 </div>
               )}
               <p className="text-xs text-foreground/60 mb-4">
-                Cart subtotal (before tax): ${total.toFixed(2)} — final total is confirmed by the server.
+                Cart subtotal (before tax): ${total.toFixed(2)} — tax, discounts, and final payable total are calculated at checkout.
               </p>
               <button
                 type="button"
