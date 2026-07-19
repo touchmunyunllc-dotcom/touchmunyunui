@@ -412,7 +412,7 @@ export default function AdminProducts() {
 
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Set Regular Price
                 </label>
                 <input
@@ -427,7 +427,7 @@ export default function AdminProducts() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Set Sale Price
                 </label>
                 <input
@@ -442,7 +442,7 @@ export default function AdminProducts() {
               </div>
 
               <div className="border-t border-foreground/10 pt-5">
-                <label className="block text-sm font-semibold text-foreground mb-2">
+                <label className="block text-sm font-semibold text-white mb-2">
                   Or Adjust Prices By
                 </label>
                 <div className="flex gap-2">

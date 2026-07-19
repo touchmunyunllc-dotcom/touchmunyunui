@@ -247,7 +247,7 @@ export default function AdminDashboard() {
                 <div className="mt-4 p-4 bg-primary/80 backdrop-blur-md rounded-lg shadow-glass border border-foreground/20">
                   <div className="flex flex-col sm:flex-row gap-4 items-end">
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-sm font-semibold text-white mb-2">
                         Start Date
                       </label>
                       <input
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-sm font-semibold text-white mb-2">
                         End Date
                       </label>
                       <input

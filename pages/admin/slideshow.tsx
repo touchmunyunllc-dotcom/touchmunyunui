@@ -325,7 +325,7 @@ export default function AdminSlideshow() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
+                  <label className="block text-sm font-semibold text-white mb-2">
                     Image URL <span className="text-gold-400">*</span>
                   </label>
                   <div className="flex gap-2">
@@ -358,7 +358,7 @@ export default function AdminSlideshow() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
+                  <label className="block text-sm font-semibold text-white mb-2">
                     Alt Text <span className="text-gold-400">*</span>
                   </label>
                   <input
@@ -372,7 +372,7 @@ export default function AdminSlideshow() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
+                  <label className="block text-sm font-semibold text-white mb-2">
                     Title
                   </label>
                   <input
@@ -385,7 +385,7 @@ export default function AdminSlideshow() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
+                  <label className="block text-sm font-semibold text-white mb-2">
                     Subtitle
                   </label>
                   <textarea
@@ -399,7 +399,7 @@ export default function AdminSlideshow() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
+                    <label className="block text-sm font-semibold text-white mb-2">
                       CTA Text
                     </label>
                     <input
@@ -411,7 +411,7 @@ export default function AdminSlideshow() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
+                    <label className="block text-sm font-semibold text-white mb-2">
                       CTA Link
                     </label>
                     <input
@@ -426,7 +426,7 @@ export default function AdminSlideshow() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
+                    <label className="block text-sm font-semibold text-white mb-2">
                       Order
                     </label>
                     <input
@@ -445,7 +445,7 @@ export default function AdminSlideshow() {
                         onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                         className="mr-2 w-4 h-4 rounded border-foreground/30 text-button focus:ring-button/50"
                       />
-                      <span className="text-sm font-semibold text-foreground">Active</span>
+                      <span className="text-sm font-semibold text-white">Active</span>
                     </label>
                   </div>
                 </div>

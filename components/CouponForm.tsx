@@ -7,6 +7,10 @@ interface CouponFormProps {
   onCancel: () => void;
 }
 
+const labelClass = 'block text-sm font-semibold text-white mb-2';
+const inputClass =
+  'w-full px-4 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-button/50 focus:border-button/50 bg-primary/60 backdrop-blur-sm text-foreground placeholder-foreground/50 transition-all';
+
 export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<{
     code: string;
@@ -51,28 +55,30 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Coupon Code *
+        <label className={labelClass}>
+          Coupon Code <span className="text-gold-400">*</span>
         </label>
         <input
           type="text"
           value={formData.code}
           onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className={inputClass}
           placeholder="SAVE20"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Discount Type *
+        <label className={labelClass}>
+          Discount Type <span className="text-gold-400">*</span>
         </label>
         <select
           value={formData.discountType}
-          onChange={(e) => setFormData({ ...formData, discountType: e.target.value as 'Percentage' | 'FixedAmount' })}
+          onChange={(e) =>
+            setFormData({ ...formData, discountType: e.target.value as 'Percentage' | 'FixedAmount' })
+          }
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className={inputClass}
         >
           <option value="Percentage">Percentage</option>
           <option value="FixedAmount">Fixed Amount</option>
@@ -80,8 +86,8 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Discount Value *
+        <label className={labelClass}>
+          Discount Value <span className="text-gold-400">*</span>
         </label>
         <input
           type="number"
@@ -90,10 +96,10 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
           required
           min="0"
           step="0.01"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className={inputClass}
           placeholder={formData.discountType === 'Percentage' ? '20' : '10.00'}
         />
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-white/60">
           {formData.discountType === 'Percentage'
             ? 'Enter percentage (e.g., 20 for 20%)'
             : 'Enter amount in dollars'}
@@ -101,8 +107,8 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Minimum Purchase Amount *
+        <label className={labelClass}>
+          Minimum Purchase Amount <span className="text-gold-400">*</span>
         </label>
         <input
           type="number"
@@ -111,49 +117,43 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
           required
           min="0"
           step="0.01"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className={inputClass}
         />
       </div>
 
       {formData.discountType === 'Percentage' && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Maximum Discount Amount (Optional)
-          </label>
+          <label className={labelClass}>Maximum Discount Amount (Optional)</label>
           <input
             type="number"
             value={formData.maxDiscountAmount}
             onChange={(e) => setFormData({ ...formData, maxDiscountAmount: e.target.value })}
             min="0"
             step="0.01"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={inputClass}
             placeholder="50.00"
           />
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Expiry Date (Optional)
-        </label>
+        <label className={labelClass}>Expiry Date (Optional)</label>
         <input
           type="date"
           value={formData.expiryDate}
           onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className={inputClass}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Usage Limit (Optional)
-        </label>
+        <label className={labelClass}>Usage Limit (Optional)</label>
         <input
           type="number"
           value={formData.usageLimit}
           onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value })}
           min="1"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className={inputClass}
           placeholder="100"
         />
       </div>
@@ -164,9 +164,9 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
           id="isActive"
           checked={formData.isActive}
           onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+          className="h-4 w-4 text-button focus:ring-button/50 border-foreground/30 rounded bg-primary/60"
         />
-        <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+        <label htmlFor="isActive" className="ml-2 block text-sm font-semibold text-white">
           Active
         </label>
       </div>
@@ -175,14 +175,14 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-button text-button-text px-6 py-3 rounded-xl hover:bg-button-200 font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {loading ? 'Saving...' : coupon ? 'Update Coupon' : 'Create Coupon'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold"
+          className="px-6 py-3 border-2 border-foreground/20 rounded-xl text-white hover:bg-primary/60 font-semibold transition-all"
         >
           Cancel
         </button>
@@ -190,4 +190,3 @@ export const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSubmit, onCanc
     </form>
   );
 };
-

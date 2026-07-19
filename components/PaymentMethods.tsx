@@ -96,6 +96,14 @@ export const PaymentMethods: React.FC = () => {
         <div className="text-center mb-4">
           <p className="text-sm text-gray-400 mb-2 font-medium">We accept all major payment methods</p>
           <p className="text-xs text-gray-500">Secured by Stripe</p>
+          <p className="text-xs text-gray-500 mt-2 max-w-xl mx-auto leading-relaxed">
+            Credit &amp; debit cards: Visa, Mastercard, American Express, Discover,
+            Diners Club, JCB, and UnionPay (availability may vary by region).
+          </p>
+          <p className="text-xs text-gray-500 mt-1 max-w-xl mx-auto leading-relaxed">
+            Digital wallets: Apple Pay and Google Pay when offered by Stripe on
+            supported devices. Cash on Delivery is also available at checkout.
+          </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
           {paymentMethods.map((method, index) => (

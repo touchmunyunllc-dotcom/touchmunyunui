@@ -280,7 +280,7 @@ export default function AdminOrders() {
         <div className="bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg p-6 mb-6 border-2 border-foreground/10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Status
               </label>
               <select
@@ -302,7 +302,7 @@ export default function AdminOrders() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Start Date
               </label>
               <input
@@ -316,7 +316,7 @@ export default function AdminOrders() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 End Date
               </label>
               <input

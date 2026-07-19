@@ -137,7 +137,7 @@ export default function NewProduct() {
         <form onSubmit={handleSubmit} className="bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg p-8 space-y-6 border-2 border-foreground/10">
           {/* Product Name */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label className="block text-sm font-semibold text-white mb-2">
               Product Name <span className="text-gold-400">*</span>
             </label>
             <input
@@ -152,7 +152,7 @@ export default function NewProduct() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label className="block text-sm font-semibold text-white mb-2">
               Description <span className="text-gold-400">*</span>
             </label>
             <textarea
@@ -168,7 +168,7 @@ export default function NewProduct() {
           {/* Price, Sale Price and Stock */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Regular Price ($) <span className="text-gold-400">*</span>
               </label>
               <input
@@ -183,7 +183,7 @@ export default function NewProduct() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Sale Price ($) <span className="text-foreground/50 text-xs">(Optional)</span>
               </label>
               <input
@@ -198,7 +198,7 @@ export default function NewProduct() {
               <p className="text-xs text-foreground/60 mt-1">Must be less than regular price</p>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Stock Quantity <span className="text-gold-400">*</span>
               </label>
               <input
@@ -215,7 +215,7 @@ export default function NewProduct() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label className="block text-sm font-semibold text-white mb-2">
               Category <span className="text-gold-400">*</span>
             </label>
             <input
@@ -230,7 +230,7 @@ export default function NewProduct() {
 
           {/* Image Upload */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label className="block text-sm font-semibold text-white mb-2">
               Product Image <span className="text-gold-400">*</span>
             </label>
             <div className="space-y-4">
@@ -262,7 +262,7 @@ export default function NewProduct() {
 
           {/* Colors */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label className="block text-sm font-semibold text-white mb-2">
               Available Colors <span className="text-foreground/50 text-xs">(Optional — click to toggle)</span>
             </label>
             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 mb-3 p-3 border border-foreground/20 rounded-xl bg-primary/40">
@@ -329,7 +329,7 @@ export default function NewProduct() {
 
           {/* Sizes */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label className="block text-sm font-semibold text-white mb-2">
               Available Sizes (1-100) <span className="text-foreground/50 text-xs">(Optional)</span>
             </label>
             <div className="flex gap-2 mb-2">
