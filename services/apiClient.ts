@@ -1,16 +1,9 @@
 import axios from 'axios';
-
-const serverApiBaseUrl = (() => {
-  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://touchmunyunapi.onrender.com/api';
-  const trimmedApiUrl = rawApiUrl.replace(/\/+$/, '');
-  return trimmedApiUrl.endsWith('/api') ? trimmedApiUrl : `${trimmedApiUrl}/api`;
-})();
+import { getApiBaseUrl } from './apiBaseUrl';
 
 const apiClient = axios.create({
-  baseURL:
-    typeof window !== 'undefined'
-      ? '/api'
-      : serverApiBaseUrl,
+  // Absolute Render URL in browser + SSR (no Next rewrite /api proxy).
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

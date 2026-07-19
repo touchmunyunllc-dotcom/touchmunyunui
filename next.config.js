@@ -64,16 +64,8 @@ const nextConfig = {
       },
     ],
   },
-  async rewrites() {
-    // Hardcode destination so a polluted NEXT_PUBLIC_API_URL on Vercel cannot
-    // fail the build with "Invalid rewrite found" (\t\nhttps://...).
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${DEFAULT_API_BASE}/api/:path*`,
-      },
-    ];
-  },
+  // No /api rewrites — browser clients call the Render API absolute URL directly.
+  // (A polluted NEXT_PUBLIC_API_URL on Vercel was breaking builds via Invalid rewrite.)
   async headers() {
     return [
       {
