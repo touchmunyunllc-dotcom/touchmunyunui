@@ -19,23 +19,21 @@ const withPWA = require('next-pwa')({
   ],
 });
 
+const DEFAULT_API_BASE = 'https://touchmunyunapi.onrender.com';
+
 function resolveApiBaseUrl(raw) {
-  const cleaned = String(raw || '')
-    .replace(/^\uFEFF/, '')
-    .replace(/[\r\n\t]/g, '')
-    .trim()
-    .replace(/^["']|["']$/g, '');
+  // Pull the first real http(s) URL out of the value so leading tabs/newlines
+  // (common when pasting into Vercel env UI) cannot break Next rewrites.
+  const match = String(raw || '').match(/https?:\/\/[^\s\u0000-\u001F"'<>\\]+/i);
+  const candidate = (match ? match[0] : DEFAULT_API_BASE)
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '');
 
-  const fallback = 'https://touchmunyunapi.onrender.com';
-  const candidate = cleaned || fallback;
-  const withoutTrailingSlash = candidate.replace(/\/+$/, '');
-  const base = withoutTrailingSlash.replace(/\/api$/i, '');
-
-  if (!/^https?:\/\//i.test(base)) {
-    return fallback;
+  if (!/^https?:\/\//i.test(candidate)) {
+    return DEFAULT_API_BASE;
   }
 
-  return base;
+  return candidate;
 }
 
 const apiBaseUrl = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
@@ -67,10 +65,12 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    // Hardcode destination so a polluted NEXT_PUBLIC_API_URL on Vercel cannot
+    // fail the build with "Invalid rewrite found" (\t\nhttps://...).
     return [
       {
         source: '/api/:path*',
-        destination: `${apiBaseUrl}/api/:path*`,
+        destination: `${DEFAULT_API_BASE}/api/:path*`,
       },
     ];
   },
