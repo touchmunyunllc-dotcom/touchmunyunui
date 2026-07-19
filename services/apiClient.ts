@@ -2,8 +2,9 @@ import axios from 'axios';
 import { getApiBaseUrl } from './apiBaseUrl';
 
 const apiClient = axios.create({
-  // Absolute Render URL in browser + SSR (no Next rewrite /api proxy).
-  baseURL: getApiBaseUrl(),
+  // Browser: same-origin /api (Next rewrite) so auth cookies stay first-party.
+  // SSR: absolute Render URL.
+  baseURL: typeof window !== 'undefined' ? '/api' : getApiBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

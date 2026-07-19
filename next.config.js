@@ -64,8 +64,15 @@ const nextConfig = {
       },
     ],
   },
-  // No /api rewrites — browser clients call the Render API absolute URL directly.
-  // (A polluted NEXT_PUBLIC_API_URL on Vercel was breaking builds via Invalid rewrite.)
+  async rewrites() {
+    // Hardcoded only — never use raw NEXT_PUBLIC_API_URL here (Vercel env had leading \t\n).
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://touchmunyunapi.onrender.com/api/:path*',
+      },
+    ];
+  },
   async headers() {
     return [
       {
