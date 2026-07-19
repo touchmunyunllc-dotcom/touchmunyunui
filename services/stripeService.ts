@@ -5,9 +5,17 @@ let stripePromise: Promise<Stripe | null>;
 
 export const getStripe = () => {
   if (!stripePromise) {
-    stripePromise = loadStripe(
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
-    );
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+    // Stripe.js only accepts publishable keys (pk_*). sk_* secret keys must stay on the API.
+    if (!key.startsWith('pk_')) {
+      console.error(
+        'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a publishable key (pk_test_... / pk_live_...). ' +
+          'A secret key (sk_...) was configured — fix this in Vercel Environment Variables and redeploy.'
+      );
+      stripePromise = Promise.resolve(null);
+    } else {
+      stripePromise = loadStripe(key);
+    }
   }
   return stripePromise;
 };
