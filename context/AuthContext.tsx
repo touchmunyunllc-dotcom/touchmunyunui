@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '@/services/authService';
+import { tokenStorage } from '@/services/tokenStorage';
 
 interface User {
   id: string;
@@ -40,16 +41,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);
+    tokenStorage.set(response.token);
     setUser(response.user);
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+    } finally {
+      tokenStorage.clear();
+      setUser(null);
+    }
   };
 
   const register = async (email: string, password: string, name: string, captchaToken?: string | null) => {
     const response = await authService.register(email, password, name, captchaToken);
+    tokenStorage.set(response.token);
     setUser(response.user);
   };
 

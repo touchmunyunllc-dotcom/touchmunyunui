@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { getApiBaseUrl } from './apiBaseUrl';
+import { tokenStorage } from './tokenStorage';
 
 const apiClient = axios.create({
-  // Browser: same-origin /api (Next rewrite) so auth cookies stay first-party.
-  // SSR: absolute Render URL.
+  // Browser: same-origin /api (Next rewrite). SSR: absolute Render URL.
   baseURL: typeof window !== 'undefined' ? '/api' : getApiBaseUrl(),
   withCredentials: true,
   headers: {
@@ -11,10 +11,13 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor for debugging
 apiClient.interceptors.request.use(
   (config) => {
-    // Log request for debugging (remove in production)
+    const token = tokenStorage.get();
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     if (process.env.NODE_ENV === 'development') {
       console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
     }
@@ -69,6 +72,7 @@ apiClient.interceptors.response.use(
           .post('/auth/refresh')
           .then(() => apiClient(originalRequest))
           .catch(() => {
+            tokenStorage.clear();
             if (typeof window !== 'undefined') {
               window.location.href = '/login';
             }
@@ -76,6 +80,7 @@ apiClient.interceptors.response.use(
           });
       }
 
+      tokenStorage.clear();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
