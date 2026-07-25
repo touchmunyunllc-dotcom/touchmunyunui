@@ -23,7 +23,7 @@ function isValidUuid(id: string): boolean {
 export default function GuestCheckoutPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, ensureGuestCartLoaded } = useCart();
   const { executeRecaptcha } = useRecaptcha();
 
   const [email, setEmail] = useState('');
@@ -52,6 +52,10 @@ export default function GuestCheckoutPage() {
       name: i.name,
       price: i.price,
       quantity: i.quantity,
+      selectedColor: i.selectedColor,
+      selectedSize: i.selectedSize,
+      customNumber: i.customNumber,
+      writingColor: i.writingColor,
     }));
   }, [items]);
 
@@ -89,11 +93,14 @@ export default function GuestCheckoutPage() {
   useEffect(() => {
     if (!router.isReady || isAuthenticated) return;
     if (items.length === 0) {
-      router.replace('/cart');
+      // Buy Now may navigate before React state flushes; cookie is written sync in addItem
+      if (!ensureGuestCartLoaded()) {
+        router.replace('/cart');
+      }
       return;
     }
     void runPreview();
-  }, [router.isReady, isAuthenticated, items.length, router, runPreview]);
+  }, [router.isReady, isAuthenticated, items.length, router, runPreview, ensureGuestCartLoaded]);
 
   const validateShipping = (): boolean => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -300,6 +307,25 @@ export default function GuestCheckoutPage() {
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{item.name}</p>
                       <p className="text-sm text-foreground/70">Qty {item.quantity}</p>
+                      {(item.selectedColor || item.customNumber || item.writingColor) && (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {item.selectedColor && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Color: {item.selectedColor}
+                            </span>
+                          )}
+                          {item.customNumber && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Number: {item.customNumber}
+                            </span>
+                          )}
+                          {item.writingColor && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Writing: {item.writingColor}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <p className="font-semibold text-button">${(item.price * item.quantity).toFixed(2)}</p>
                   </div>

@@ -11,6 +11,10 @@ export interface Product {
   stock: number;
   colors: string[];
   sizes: number[];
+  /** color name → image URL */
+  colorImages?: Record<string, string>;
+  /** e.g. "wristband" */
+  customizationType?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +76,8 @@ export const productService = {
     stock: number;
     colors?: string[];
     sizes?: number[];
+    colorImages?: Record<string, string>;
+    customizationType?: string | null;
   }) {
     const response = await apiClient.post<Product>('/products', product);
     return response.data;
@@ -82,11 +88,14 @@ export const productService = {
     description?: string;
     price?: number;
     salePrice?: number;
+    clearSalePrice?: boolean;
     imageUrl?: string;
     category?: string;
     stock?: number;
     colors?: string[];
     sizes?: number[];
+    colorImages?: Record<string, string>;
+    customizationType?: string | null;
   }) {
     const response = await apiClient.put<Product>(`/products/${id}`, product);
     return response.data;

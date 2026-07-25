@@ -16,6 +16,7 @@ interface AdminOrder {
   userName?: string;
   userEmail?: string;
   guestEmail?: string;
+  guestName?: string;
   totalAmount: number;
   status: string;
   couponCode?: string;
@@ -29,9 +30,13 @@ interface AdminOrder {
   updatedAt?: string;
   orderItems?: Array<{
     productName: string;
-    productSku: string;
+    productSku?: string;
     quantity: number;
     price: number;
+    selectedColor?: string;
+    selectedSize?: number;
+    customNumber?: string;
+    writingColor?: string;
   }>;
 }
 
@@ -192,15 +197,21 @@ export default function AdminOrders() {
     const rows = orders.map((order: any) => {
       // Format order items as a readable string
       const itemsStr = order.orderItems && order.orderItems.length > 0
-        ? order.orderItems.map((item: any) => 
-            `${item.productName || 'N/A'} (SKU: ${item.productSku || 'N/A'}) - Qty: ${item.quantity} - Price: $${item.price.toFixed(2)}`
-          ).join('; ')
+        ? order.orderItems.map((item: any) => {
+            const extras = [
+              item.selectedColor ? `Color: ${item.selectedColor}` : null,
+              item.selectedSize != null ? `Size: ${item.selectedSize}` : null,
+              item.customNumber ? `Number: ${item.customNumber}` : null,
+              item.writingColor ? `Writing: ${item.writingColor}` : null,
+            ].filter(Boolean).join(', ');
+            return `${item.productName || 'N/A'} (SKU: ${item.productSku || 'N/A'}) - Qty: ${item.quantity} - Price: $${item.price.toFixed(2)}${extras ? ` [${extras}]` : ''}`;
+          }).join('; ')
         : 'No items';
 
       return [
         escapeCSV(order.orderCode || order.id.slice(0, 8)),
         escapeCSV(order.id),
-        escapeCSV(order.userName || 'Guest'),
+        escapeCSV(order.userName || order.guestName || 'Guest'),
         escapeCSV(order.userEmail || ''),
         escapeCSV(order.guestEmail || ''),
         escapeCSV(order.totalAmount.toFixed(2)),
@@ -426,7 +437,9 @@ export default function AdminOrders() {
                 </div>
                 <div className="bg-primary/60 backdrop-blur-sm rounded-xl p-4 border border-foreground/10">
                   <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide mb-1">Customer Name</p>
-                  <p className="font-semibold text-foreground">{selectedOrder.userName || 'Guest'}</p>
+                  <p className="font-semibold text-foreground">
+                    {selectedOrder.userName || selectedOrder.guestName || 'Guest'}
+                  </p>
                 </div>
                 <div className="bg-primary/60 backdrop-blur-sm rounded-xl p-4 border border-foreground/10">
                   <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide mb-1">Customer Email</p>
@@ -511,6 +524,18 @@ export default function AdminOrders() {
                             <span className="font-semibold text-foreground">{item.productName}</span>
                             <span className="text-xs text-foreground/60 ml-2">(SKU: {item.productSku})</span>
                             <span className="block text-sm text-foreground/70 mt-1">Qty: {item.quantity} × ${item.price.toFixed(2)}</span>
+                            {item.selectedColor && (
+                              <span className="block text-xs text-foreground/60">Color: {item.selectedColor}</span>
+                            )}
+                            {item.selectedSize != null && (
+                              <span className="block text-xs text-foreground/60">Size: {item.selectedSize}</span>
+                            )}
+                            {item.customNumber && (
+                              <span className="block text-xs text-foreground/60">Number: {item.customNumber}</span>
+                            )}
+                            {item.writingColor && (
+                              <span className="block text-xs text-foreground/60">Writing: {item.writingColor}</span>
+                            )}
                           </div>
                           <span className="font-bold text-gold-400">${(item.price * item.quantity).toFixed(2)}</span>
                         </div>

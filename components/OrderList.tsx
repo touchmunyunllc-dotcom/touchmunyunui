@@ -96,6 +96,17 @@ export const OrderList: React.FC<OrderListProps> = ({
                         {item.product?.name || item.productName || 'Product'}
                       </p>
                       <p className="text-xs text-foreground/60">Qty: {item.quantity}</p>
+                      {(item.selectedColor || item.customNumber || item.writingColor) && (
+                        <p className="text-xs text-foreground/50">
+                          {[
+                            item.selectedColor && `Color: ${item.selectedColor}`,
+                            item.customNumber && `Number: ${item.customNumber}`,
+                            item.writingColor && `Writing: ${item.writingColor}`,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}

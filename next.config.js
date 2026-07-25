@@ -65,11 +65,11 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    // Hardcoded only — never use raw NEXT_PUBLIC_API_URL here (Vercel env had leading \t\n).
+    // Use sanitized apiBaseUrl (strips tabs/newlines). Defaults to Render; override via NEXT_PUBLIC_API_URL for local.
     return [
       {
         source: '/api/:path*',
-        destination: 'https://touchmunyunapi.onrender.com/api/:path*',
+        destination: `${apiBaseUrl}/api/:path*`,
       },
     ];
   },

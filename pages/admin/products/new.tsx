@@ -15,6 +15,9 @@ export default function NewProduct() {
   const [sizeInput, setSizeInput] = useState('');
   const [colors, setColors] = useState<string[]>([]);
   const [sizes, setSizes] = useState<number[]>([]);
+  const [colorImages, setColorImages] = useState<Record<string, string>>({});
+  const [customizationType, setCustomizationType] = useState('');
+  const [uploadingColor, setUploadingColor] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,6 +49,21 @@ export default function NewProduct() {
       notificationService.error('Failed to upload image');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleColorImageUpload = async (color: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingColor(color);
+    try {
+      const url = await imageService.uploadImage(file);
+      setColorImages((prev) => ({ ...prev, [color]: url }));
+      notificationService.success(`${color} image uploaded`);
+    } catch {
+      notificationService.error(`Failed to upload ${color} image`);
+    } finally {
+      setUploadingColor(null);
     }
   };
 
@@ -82,6 +100,10 @@ export default function NewProduct() {
       notificationService.error('Valid stock quantity is required');
       return;
     }
+    if (customizationType === 'wristband' && colors.length === 0) {
+      notificationService.error('Wristband products need at least one band color');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -95,6 +117,8 @@ export default function NewProduct() {
         stock: parseInt(formData.stock),
         colors: colors.length > 0 ? colors : undefined,
         sizes: sizes.length > 0 ? sizes : undefined,
+        colorImages,
+        customizationType: customizationType || undefined,
       });
       
       notificationService.success('Product created successfully');
@@ -316,7 +340,14 @@ export default function NewProduct() {
                     {color}
                     <button
                       type="button"
-                      onClick={() => setColors(colors.filter((c) => c !== color))}
+                      onClick={() => {
+                        setColors(colors.filter((c) => c !== color));
+                        setColorImages((prev) => {
+                          const next = { ...prev };
+                          delete next[color];
+                          return next;
+                        });
+                      }}
                       className="ml-1 text-button hover:text-foreground transition-colors"
                     >
                       &times;
@@ -325,6 +356,45 @@ export default function NewProduct() {
                 ))}
               </div>
             )}
+          </div>
+
+          {colors.length > 0 && (
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">
+                Color images <span className="text-foreground/50 text-xs">(optional)</span>
+              </label>
+              <div className="space-y-3">
+                {colors.map((color) => (
+                  <div key={color} className="flex flex-wrap items-center gap-4 p-3 border border-foreground/20 rounded-xl bg-primary/40">
+                    <span className="text-sm font-medium text-white w-24">{color}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleColorImageUpload(color, e)}
+                      disabled={uploadingColor === color}
+                      className="text-sm text-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-button file:text-button-text"
+                    />
+                    {uploadingColor === color && <LoadingSpinner />}
+                    {colorImages[color] && (
+                      <img src={colorImages[color]} alt={color} className="w-16 h-16 object-cover rounded-lg border border-foreground/20" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 p-4 border border-foreground/20 rounded-xl bg-primary/40">
+            <input
+              type="checkbox"
+              id="wristbandCustomizationNew"
+              checked={customizationType === 'wristband'}
+              onChange={(e) => setCustomizationType(e.target.checked ? 'wristband' : '')}
+              className="h-4 w-4 rounded border-foreground/30 text-button focus:ring-button/50"
+            />
+            <label htmlFor="wristbandCustomizationNew" className="text-sm font-semibold text-white">
+              Wristband customization (number + writing color on storefront)
+            </label>
           </div>
 
           {/* Sizes */}

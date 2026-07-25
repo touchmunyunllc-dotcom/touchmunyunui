@@ -15,12 +15,16 @@ interface CartItem {
   image: string;
   selectedColor?: string;
   selectedSize?: number;
+  customNumber?: string;
+  writingColor?: string;
 }
 
 /** When multiple cart lines share the same productId (different color/size), pass this so the correct line is updated. */
 export type CartLineKey = {
   selectedColor?: string;
   selectedSize?: number;
+  customNumber?: string;
+  writingColor?: string;
   /** Server cart row id — most precise when available */
   cartLineId?: string;
 };
@@ -31,6 +35,8 @@ interface CartContextType {
   removeItem: (productId: string, line?: CartLineKey) => Promise<void>;
   updateQuantity: (productId: string, quantity: number, line?: CartLineKey) => Promise<void>;
   clearCart: () => Promise<void>;
+  /** Re-read guest cookie into state (Buy Now → guest-checkout race). */
+  ensureGuestCartLoaded: () => boolean;
   subtotal: number;
   tax: number;
   discount: number;
@@ -40,12 +46,14 @@ interface CartContextType {
 }
 
 function sameVariant(
-  a: { selectedColor?: string; selectedSize?: number },
-  b: { selectedColor?: string; selectedSize?: number }
+  a: { selectedColor?: string; selectedSize?: number; customNumber?: string; writingColor?: string },
+  b: { selectedColor?: string; selectedSize?: number; customNumber?: string; writingColor?: string }
 ) {
   return (
     (a.selectedColor ?? '') === (b.selectedColor ?? '') &&
-    (a.selectedSize ?? null) === (b.selectedSize ?? null)
+    (a.selectedSize ?? null) === (b.selectedSize ?? null) &&
+    (a.customNumber ?? '') === (b.customNumber ?? '') &&
+    (a.writingColor ?? '') === (b.writingColor ?? '')
   );
 }
 
@@ -87,11 +95,63 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadCart = async () => {
     if (isAuthenticated && user) {
-      // Load from backend API
       try {
         setLoading(true);
+
+        // Merge guest cookie cart into account cart (login / register / session restore)
+        const guestItems = parseGuestCartCookie();
+        if (guestItems.length > 0) {
+          let serverCart;
+          try {
+            serverCart = await cartService.getCart();
+          } catch {
+            serverCart = null;
+          }
+
+          for (const item of guestItems) {
+            try {
+              const existing = serverCart?.items.find(
+                (s) =>
+                  s.productId === item.productId &&
+                  sameVariant(s, item)
+              );
+              const nextQty = Math.min(
+                10,
+                (existing?.quantity ?? 0) + item.quantity
+              );
+              await cartService.addToCart(
+                item.productId,
+                nextQty,
+                item.selectedColor,
+                item.selectedSize,
+                item.customNumber,
+                item.writingColor
+              );
+              if (serverCart && existing) {
+                existing.quantity = nextQty;
+              } else if (serverCart) {
+                serverCart.items.push({
+                  id: 'pending',
+                  productId: item.productId,
+                  productName: item.name,
+                  productPrice: item.price,
+                  productImageUrl: item.image,
+                  quantity: nextQty,
+                  subtotal: item.price * nextQty,
+                  selectedColor: item.selectedColor,
+                  selectedSize: item.selectedSize,
+                  customNumber: item.customNumber,
+                  writingColor: item.writingColor,
+                });
+              }
+            } catch (mergeError) {
+              console.error('Failed to merge guest cart line:', mergeError);
+            }
+          }
+          Cookies.remove('cart');
+        }
+
         const cart = await cartService.getCart();
-        // Map backend cart items to frontend format
         const mappedItems: CartItem[] = cart.items.map((item) => ({
           id: item.id,
           productId: item.productId,
@@ -101,6 +161,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
           image: item.productImageUrl || '',
           selectedColor: item.selectedColor,
           selectedSize: item.selectedSize,
+          customNumber: item.customNumber,
+          writingColor: item.writingColor,
         }));
         setItems(mappedItems);
         setSubtotal(cart.subtotal || 0);
@@ -109,46 +171,61 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         setTotal(cart.total || 0);
       } catch (error) {
         console.error('Failed to load cart from backend:', error);
-        // Fallback to local cart
         loadLocalCart();
       } finally {
         setLoading(false);
       }
     } else {
-      // Load from local storage for guest users
       loadLocalCart();
     }
   };
 
-  const loadLocalCart = () => {
+  const parseGuestCartCookie = (): CartItem[] => {
     const savedCart = Cookies.get('cart');
-    if (savedCart) {
-      try {
-        const parsed = JSON.parse(savedCart) as Array<Partial<CartItem>>;
-        const normalized: CartItem[] = parsed
-          .map((item, index) => {
-            const productId = String(item.productId ?? item.id ?? '').trim();
-            const lineId = String(item.id ?? `${productId}-${index}`).trim();
+    if (!savedCart) return [];
+    try {
+      const parsed = JSON.parse(savedCart) as Array<Partial<CartItem>>;
+      return parsed
+        .map((item, index) => {
+          const productId = String(item.productId ?? item.id ?? '').trim();
+          const lineId = String(item.id ?? `${productId}-${index}`).trim();
 
-            return {
-              id: lineId,
-              productId,
-              name: String(item.name ?? '').trim(),
-              price: Number(item.price ?? 0),
-              quantity: Number(item.quantity ?? 0),
-              image: String(item.image ?? ''),
-              selectedColor: item.selectedColor,
-              selectedSize: item.selectedSize,
-            };
-          })
-          .filter((item) => item.productId.length > 0 && item.quantity > 0);
-
-        setItems(normalized);
-        updateGuestSummary(normalized);
-      } catch (error) {
-        console.error('Failed to parse cart from cookies', error);
-      }
+          return {
+            id: lineId,
+            productId,
+            name: String(item.name ?? '').trim(),
+            price: Number(item.price ?? 0),
+            quantity: Number(item.quantity ?? 0),
+            image: String(item.image ?? ''),
+            selectedColor: item.selectedColor,
+            selectedSize: item.selectedSize,
+            customNumber: item.customNumber,
+            writingColor: item.writingColor,
+          };
+        })
+        .filter((item) => item.productId.length > 0 && item.quantity > 0);
+    } catch (error) {
+      console.error('Failed to parse cart from cookies', error);
+      return [];
     }
+  };
+
+  const loadLocalCart = () => {
+    const normalized = parseGuestCartCookie();
+    if (normalized.length > 0) {
+      setItems(normalized);
+      updateGuestSummary(normalized);
+    }
+  };
+
+  const ensureGuestCartLoaded = (): boolean => {
+    if (isAuthenticated) return items.length > 0;
+    if (items.length > 0) return true;
+    const normalized = parseGuestCartCookie();
+    if (normalized.length === 0) return false;
+    setItems(normalized);
+    updateGuestSummary(normalized);
+    return true;
   };
 
   const updateGuestSummary = (guestItems: CartItem[]) => {
@@ -176,39 +253,41 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addItem = async (item: Omit<CartItem, 'id'>) => {
     if (isAuthenticated && user) {
-      // Call backend API
       try {
         setLoading(true);
-        await cartService.addToCart(item.productId, item.quantity, item.selectedColor, item.selectedSize);
-        // Reload cart from backend
+        await cartService.addToCart(
+          item.productId,
+          item.quantity,
+          item.selectedColor,
+          item.selectedSize,
+          item.customNumber,
+          item.writingColor
+        );
         await loadCart();
       } catch (error: any) {
         console.error('Failed to add item to cart:', error);
         notificationService.error(
           error.response?.data?.message || 'Failed to add item to cart'
         );
+        throw error;
       } finally {
         setLoading(false);
       }
     } else {
-      // Update local state for guest users - update quantity instead of adding
-      setItems((prevItems) => {
-        const existingItem = prevItems.find(
-          (i) => i.productId === item.productId && i.selectedColor === item.selectedColor && i.selectedSize === item.selectedSize
-        );
-        if (existingItem) {
-          const nextItems = prevItems.map((i) =>
-            i.productId === item.productId && i.selectedColor === item.selectedColor && i.selectedSize === item.selectedSize
+      // Sync cookie before navigate (Buy Now → guest-checkout)
+      const existingItem = items.find(
+        (i) => i.productId === item.productId && sameVariant(i, item)
+      );
+      const nextItems = existingItem
+        ? items.map((i) =>
+            i.productId === item.productId && sameVariant(i, item)
               ? { ...i, quantity: item.quantity }
               : i
-          );
-          updateGuestSummary(nextItems);
-          return nextItems;
-        }
-        const nextItems = [...prevItems, { ...item, id: Date.now().toString() }];
-        updateGuestSummary(nextItems);
-        return nextItems;
-      });
+          )
+        : [...items, { ...item, id: Date.now().toString() }];
+      Cookies.set('cart', JSON.stringify(nextItems), { expires: 7 });
+      setItems(nextItems);
+      updateGuestSummary(nextItems);
     }
   };
 
@@ -308,6 +387,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         removeItem,
         updateQuantity,
         clearCart,
+        ensureGuestCartLoaded,
         subtotal,
         tax,
         discount,

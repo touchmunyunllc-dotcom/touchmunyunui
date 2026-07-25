@@ -5,6 +5,10 @@ export interface OrderItem {
   productId: string;
   quantity: number;
   price: number;
+  selectedColor?: string;
+  selectedSize?: number;
+  customNumber?: string;
+  writingColor?: string;
   product?: {
     id: string;
     name: string;

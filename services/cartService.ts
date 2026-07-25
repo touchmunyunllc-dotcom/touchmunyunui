@@ -10,6 +10,8 @@ export interface CartItem {
   subtotal: number;
   selectedColor?: string;
   selectedSize?: number;
+  customNumber?: string;
+  writingColor?: string;
 }
 
 export interface CartSummary {
@@ -26,12 +28,21 @@ export interface CartSummary {
 }
 
 export const cartService = {
-  async addToCart(productId: string, quantity: number, selectedColor?: string, selectedSize?: number): Promise<CartItem> {
+  async addToCart(
+    productId: string,
+    quantity: number,
+    selectedColor?: string,
+    selectedSize?: number,
+    customNumber?: string,
+    writingColor?: string
+  ): Promise<CartItem> {
     const response = await apiClient.post<CartItem>('/cart/add', {
       productId,
       quantity,
       selectedColor,
       selectedSize,
+      customNumber,
+      writingColor,
     });
     return response.data;
   },

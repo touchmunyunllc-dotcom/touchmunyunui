@@ -235,6 +235,30 @@ export default function OrderSuccess() {
                       <p className="text-sm text-foreground/70">
                         Quantity: {item.quantity} × ${item.price.toFixed(2)}
                       </p>
+                      {(item.selectedColor || item.selectedSize || item.customNumber || item.writingColor) && (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {item.selectedColor && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Color: {item.selectedColor}
+                            </span>
+                          )}
+                          {item.selectedSize != null && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Size: {item.selectedSize}
+                            </span>
+                          )}
+                          {item.customNumber && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Number: {item.customNumber}
+                            </span>
+                          )}
+                          {item.writingColor && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Writing: {item.writingColor}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <p className="font-semibold text-button">
                       ${(item.price * item.quantity).toFixed(2)}

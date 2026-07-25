@@ -6,6 +6,7 @@ import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { productService, Product } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { notificationService } from '@/services/notificationService';
 import Image from 'next/image';
 
@@ -17,10 +18,15 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
   const [selectedSize, setSelectedSize] = useState<number | undefined>(undefined);
+  const [customNumber, setCustomNumber] = useState('');
+  const [writingColor, setWritingColor] = useState<string>('White');
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
   const [updatingQuantity, setUpdatingQuantity] = useState(false);
   const { addItem, items, updateQuantity } = useCart();
+  const { isAuthenticated } = useAuth();
+  const isWristband = (product?.customizationType || '').toLowerCase() === 'wristband';
+  const writingColorOptions = ['Black', 'White', 'Red'];
 
   useEffect(() => {
     if (id) {
@@ -43,7 +49,12 @@ export default function ProductDetail() {
   useEffect(() => {
     if (product) {
       const cartItem = items.find(
-        (item) => item.productId === product.id && item.selectedColor === selectedColor && item.selectedSize === selectedSize
+        (item) =>
+          item.productId === product.id &&
+          item.selectedColor === selectedColor &&
+          item.selectedSize === selectedSize &&
+          (item.customNumber || '') === (customNumber || '') &&
+          (item.writingColor || '') === (isWristband ? writingColor : '')
       );
       if (cartItem) {
         setQuantity(cartItem.quantity);
@@ -51,7 +62,7 @@ export default function ProductDetail() {
         setQuantity(1);
       }
     }
-  }, [product, items, selectedColor, selectedSize]);
+  }, [product, items, selectedColor, selectedSize, customNumber, writingColor, isWristband]);
 
   // Auto-select first color/size when product loads
   useEffect(() => {
@@ -82,7 +93,12 @@ export default function ProductDetail() {
     setQuantity(validQuantity);
 
     const cartItem = items.find(
-      (item) => item.productId === product.id && item.selectedColor === selectedColor && item.selectedSize === selectedSize
+      (item) =>
+        item.productId === product.id &&
+        item.selectedColor === selectedColor &&
+        item.selectedSize === selectedSize &&
+        (item.customNumber || '') === (customNumber || '') &&
+        (item.writingColor || '') === (isWristband ? writingColor : '')
     );
     if (cartItem) {
       // Item is in cart, update the quantity
@@ -91,6 +107,8 @@ export default function ProductDetail() {
         await updateQuantity(product.id, validQuantity, {
           selectedColor,
           selectedSize,
+          customNumber: customNumber || undefined,
+          writingColor: isWristband ? writingColor : undefined,
         });
         notificationService.success('Cart quantity updated');
       } catch (error) {
@@ -119,19 +137,55 @@ export default function ProductDetail() {
     }
   };
 
+  const resolveDisplayImage = () => {
+    if (!product) return '/placeholder.png';
+    if (selectedColor && product.colorImages?.[selectedColor]) {
+      return product.colorImages[selectedColor];
+    }
+    // case-insensitive lookup
+    if (selectedColor && product.colorImages) {
+      const key = Object.keys(product.colorImages).find(
+        (k) => k.toLowerCase() === selectedColor.toLowerCase()
+      );
+      if (key) return product.colorImages[key];
+    }
+    return product.imageUrl || '/placeholder.png';
+  };
+
+  const validateWristband = () => {
+    if (!isWristband) return true;
+    if (!selectedColor) {
+      notificationService.error('Please select a band color');
+      return false;
+    }
+    if (!/^\d{1,3}$/.test(customNumber.trim())) {
+      notificationService.error('Enter a number (digits only, max 3)');
+      return false;
+    }
+    if (!writingColor) {
+      notificationService.error('Please select a writing color');
+      return false;
+    }
+    return true;
+  };
+
   const handleAddToCart = async () => {
     if (!product) return;
+    if (!validateWristband()) return;
 
+    const displayImage = resolveDisplayImage();
     setAddingToCart(true);
     try {
       await addItem({
         productId: product.id,
         name: product.name,
-        price: product.price,
+        price: product.salePrice ?? product.price,
         quantity,
-        image: product.imageUrl,
+        image: displayImage,
         selectedColor,
         selectedSize,
+        customNumber: isWristband ? customNumber.trim() : undefined,
+        writingColor: isWristband ? writingColor : undefined,
       });
       notificationService.success(`${product.name} added to cart!`);
     } catch (error) {
@@ -143,23 +197,26 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (!product) return;
+    if (!validateWristband()) return;
 
+    const displayImage = resolveDisplayImage();
     setBuyingNow(true);
     try {
-      // Add item to cart first
       await addItem({
         productId: product.id,
         name: product.name,
-        price: product.price,
+        price: product.salePrice ?? product.price,
         quantity,
-        image: product.imageUrl,
+        image: displayImage,
         selectedColor,
         selectedSize,
+        customNumber: isWristband ? customNumber.trim() : undefined,
+        writingColor: isWristband ? writingColor : undefined,
       });
-      // Redirect to checkout
-      router.push('/checkout');
-    } catch (error) {
-      // Error already handled in CartContext
+      router.push(isAuthenticated ? '/checkout' : '/guest-checkout');
+    } catch {
+      // Error already notified in CartContext; stay on PDP
+    } finally {
       setBuyingNow(false);
     }
   };
@@ -193,8 +250,10 @@ export default function ProductDetail() {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://touchmunyun.com';
-  const productImage = product.imageUrl || `${siteUrl}/placeholder.png`;
+  const productImage = resolveDisplayImage();
   const productUrl = `${siteUrl}/product/${product.id}`;
+  const previewInk =
+    writingColor === 'Black' ? '#111827' : writingColor === 'Red' ? '#EF4444' : '#F9FAFB';
 
   return (
     <>
@@ -271,15 +330,25 @@ export default function ProductDetail() {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Image */}
+          {/* Product Image (+ wristband number preview) */}
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-primary/60">
             <Image
-              src={product.imageUrl || '/placeholder.png'}
+              src={productImage}
               alt={product.name}
               fill
               className="object-cover"
               priority
             />
+            {isWristband && customNumber.trim() && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span
+                  className="text-5xl sm:text-6xl font-black tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.65)]"
+                  style={{ color: previewInk }}
+                >
+                  {customNumber.trim()}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -374,6 +443,50 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* Wristband number + writing color */}
+            {isWristband && (
+              <div className="space-y-4 p-4 border border-foreground/20 rounded-xl bg-primary/40">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">Number</h2>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={3}
+                    value={customNumber}
+                    onChange={(e) => setCustomNumber(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                    placeholder="e.g. 23"
+                    className="w-full max-w-xs px-4 py-3 border border-foreground/20 rounded-xl bg-primary/60 text-foreground placeholder-foreground/40 focus:ring-2 focus:ring-button/50"
+                  />
+                  <p className="text-xs text-foreground/50 mt-1">Digits only, max 3</p>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-2">
+                    Writing color{writingColor ? `: ${writingColor}` : ''}
+                  </h2>
+                  <div className="flex flex-wrap gap-3">
+                    {writingColorOptions.map((wc) => {
+                      const hex = wc === 'Black' ? '#1F2937' : wc === 'Red' ? '#EF4444' : '#F9FAFB';
+                      return (
+                        <button
+                          key={wc}
+                          type="button"
+                          title={wc}
+                          onClick={() => setWritingColor(wc)}
+                          className={`w-10 h-10 rounded-full border-2 transition-all ${
+                            writingColor === wc
+                              ? 'border-button ring-2 ring-button/40 scale-110'
+                              : 'border-foreground/30 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: hex }}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Size Selector - Dropdown */}
             {product.sizes && product.sizes.length > 0 && (
               <div>
@@ -395,7 +508,16 @@ export default function ProductDetail() {
             {/* Quantity Selector */}
             <div className="flex items-center gap-4">
               <label className="text-foreground font-medium">
-                {items.find((item) => item.productId === product.id && item.selectedColor === selectedColor && item.selectedSize === selectedSize) ? 'Quantity in Cart:' : 'Quantity:'}
+                {items.find(
+                  (item) =>
+                    item.productId === product.id &&
+                    item.selectedColor === selectedColor &&
+                    item.selectedSize === selectedSize &&
+                    (item.customNumber || '') === (customNumber || '') &&
+                    (item.writingColor || '') === (isWristband ? writingColor : '')
+                )
+                  ? 'Quantity in Cart:'
+                  : 'Quantity:'}
               </label>
               <div className="flex items-center border border-foreground/20 rounded-lg bg-primary/60">
                 <button
@@ -421,7 +543,12 @@ export default function ProductDetail() {
             {/* Action Buttons */}
             {(() => {
               const cartItem = items.find(
-                (item) => item.productId === product.id && item.selectedColor === selectedColor && item.selectedSize === selectedSize
+                (item) =>
+                  item.productId === product.id &&
+                  item.selectedColor === selectedColor &&
+                  item.selectedSize === selectedSize &&
+                  (item.customNumber || '') === (customNumber || '') &&
+                  (item.writingColor || '') === (isWristband ? writingColor : '')
               );
               const isInCart = cartItem !== undefined;
 

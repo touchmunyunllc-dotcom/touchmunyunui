@@ -92,7 +92,7 @@ export default function Cart() {
                         <h3 className="text-lg font-bold text-foreground mb-1">
                           {item.name}
                         </h3>
-                        {(item.selectedColor || item.selectedSize) && (
+                        {(item.selectedColor || item.selectedSize || item.customNumber || item.writingColor) && (
                           <div className="flex flex-wrap gap-2 mb-1">
                             {item.selectedColor && (
                               <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
@@ -102,6 +102,16 @@ export default function Cart() {
                             {item.selectedSize && (
                               <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
                                 Size: {item.selectedSize}
+                              </span>
+                            )}
+                            {item.customNumber && (
+                              <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                                Number: {item.customNumber}
+                              </span>
+                            )}
+                            {item.writingColor && (
+                              <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                                Writing: {item.writingColor}
                               </span>
                             )}
                           </div>
@@ -116,6 +126,8 @@ export default function Cart() {
                                 updateQuantity(item.productId, item.quantity - 1, {
                                   selectedColor: item.selectedColor,
                                   selectedSize: item.selectedSize,
+                                  customNumber: item.customNumber,
+                                  writingColor: item.writingColor,
                                   cartLineId: item.id,
                                 })
                               }
@@ -147,6 +159,8 @@ export default function Cart() {
                                   updateQuantity(item.productId, item.quantity + 1, {
                                     selectedColor: item.selectedColor,
                                     selectedSize: item.selectedSize,
+                                    customNumber: item.customNumber,
+                                    writingColor: item.writingColor,
                                     cartLineId: item.id,
                                   });
                                 }
@@ -174,6 +188,8 @@ export default function Cart() {
                               removeItem(item.productId, {
                                 selectedColor: item.selectedColor,
                                 selectedSize: item.selectedSize,
+                                customNumber: item.customNumber,
+                                writingColor: item.writingColor,
                                 cartLineId: item.id,
                               })
                             }

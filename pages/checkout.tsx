@@ -291,7 +291,7 @@ export default function Checkout() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-foreground">{item.name}</h3>
-                      {(item.selectedColor || item.selectedSize) && (
+                      {(item.selectedColor || item.selectedSize || item.customNumber || item.writingColor) && (
                         <div className="flex flex-wrap gap-2 mt-1">
                           {item.selectedColor && (
                             <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
@@ -301,6 +301,16 @@ export default function Checkout() {
                           {item.selectedSize && (
                             <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
                               Size: {item.selectedSize}
+                            </span>
+                          )}
+                          {item.customNumber && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Number: {item.customNumber}
+                            </span>
+                          )}
+                          {item.writingColor && (
+                            <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                              Writing: {item.writingColor}
                             </span>
                           )}
                         </div>

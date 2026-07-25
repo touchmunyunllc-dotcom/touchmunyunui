@@ -5,6 +5,10 @@ export interface GuestOrderItemPayload {
   name: string;
   price: number;
   quantity: number;
+  selectedColor?: string;
+  selectedSize?: number;
+  customNumber?: string;
+  writingColor?: string;
 }
 
 export interface GuestCheckoutPreview {
@@ -44,6 +48,10 @@ export interface GuestOrderLine {
   productId: string;
   quantity: number;
   price: number;
+  selectedColor?: string;
+  selectedSize?: number;
+  customNumber?: string;
+  writingColor?: string;
   product?: {
     id: string;
     name: string;

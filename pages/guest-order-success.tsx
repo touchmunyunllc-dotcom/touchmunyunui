@@ -129,6 +129,25 @@ export default function GuestOrderSuccess() {
                           <p className="text-sm text-foreground/70">
                             Qty {line.quantity} × ${line.price.toFixed(2)}
                           </p>
+                          {(line.selectedColor || line.customNumber || line.writingColor) && (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {line.selectedColor && (
+                                <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                                  Color: {line.selectedColor}
+                                </span>
+                              )}
+                              {line.customNumber && (
+                                <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                                  Number: {line.customNumber}
+                                </span>
+                              )}
+                              {line.writingColor && (
+                                <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
+                                  Writing: {line.writingColor}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <p className="font-semibold text-button">
                           ${(line.price * line.quantity).toFixed(2)}
