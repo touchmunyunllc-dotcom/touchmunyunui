@@ -6,6 +6,7 @@ import { productService } from '@/services/productService';
 import { imageService } from '@/services/imageService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ColorMultiSelect } from '@/components/ColorMultiSelect';
 
 export default function EditProduct() {
   const router = useRouter();
@@ -322,78 +323,19 @@ export default function EditProduct() {
           </div>
 
           {/* Colors */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">
-              Available Colors <span className="text-foreground/50 text-xs">(Optional — click to toggle)</span>
-            </label>
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2 mb-3 p-3 border border-foreground/20 rounded-xl bg-primary/40">
-              {[
-                { name: 'Red', hex: '#EF4444' }, { name: 'Blue', hex: '#3B82F6' }, { name: 'Green', hex: '#22C55E' },
-                { name: 'Yellow', hex: '#EAB308' }, { name: 'Orange', hex: '#F97316' }, { name: 'Purple', hex: '#A855F7' },
-                { name: 'Pink', hex: '#EC4899' }, { name: 'Black', hex: '#1F2937' }, { name: 'White', hex: '#F9FAFB' },
-                { name: 'Gray', hex: '#6B7280' }, { name: 'Brown', hex: '#92400E' }, { name: 'Navy', hex: '#1E3A5F' },
-                { name: 'Teal', hex: '#14B8A6' }, { name: 'Cyan', hex: '#06B6D4' }, { name: 'Magenta', hex: '#D946EF' },
-                { name: 'Lime', hex: '#84CC16' }, { name: 'Indigo', hex: '#6366F1' }, { name: 'Gold', hex: '#D4A017' },
-                { name: 'Silver', hex: '#C0C0C0' }, { name: 'Beige', hex: '#F5F5DC' }, { name: 'Maroon', hex: '#800000' },
-                { name: 'Olive', hex: '#808000' }, { name: 'Coral', hex: '#FF7F50' }, { name: 'Salmon', hex: '#FA8072' },
-                { name: 'Cream', hex: '#FFFDD0' }, { name: 'Turquoise', hex: '#40E0D0' }, { name: 'Lavender', hex: '#E6E6FA' },
-                { name: 'Burgundy', hex: '#800020' }, { name: 'Charcoal', hex: '#36454F' }, { name: 'Peach', hex: '#FFCBA4' },
-                { name: 'Rust', hex: '#B7410E' }, { name: 'Mint', hex: '#98FF98' }, { name: 'Tan', hex: '#D2B48C' },
-                { name: 'Rose', hex: '#FF007F' }, { name: 'Sky', hex: '#87CEEB' }, { name: 'Wine', hex: '#722F37' },
-                { name: 'Ivory', hex: '#FFFFF0' }, { name: 'Plum', hex: '#DDA0DD' }, { name: 'Khaki', hex: '#C3B091' },
-                { name: 'Chocolate', hex: '#7B3F00' },
-              ].map(({ name, hex }) => {
-                const isSelected = colors.includes(name);
-                const isLight = ['White', 'Ivory', 'Cream', 'Beige', 'Yellow', 'Lime', 'Gold', 'Silver', 'Lavender', 'Peach', 'Mint', 'Khaki'].includes(name);
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    title={name}
-                    onClick={() => isSelected ? setColors(colors.filter((c) => c !== name)) : setColors([...colors, name])}
-                    className={`w-9 h-9 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
-                      isSelected
-                        ? 'border-button ring-2 ring-button/40 ring-offset-1 ring-offset-primary scale-110 shadow-lg'
-                        : 'border-foreground/20 hover:border-foreground/50 hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: hex }}
-                  >
-                    {isSelected && (
-                      <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" style={{ color: isLight ? '#1F2937' : '#FFFFFF' }}>
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {colors.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <span
-                    key={color}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-button/20 text-button border border-button/30 rounded-lg text-sm font-medium"
-                  >
-                    {color}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setColors(colors.filter((c) => c !== color));
-                        setColorImages((prev) => {
-                          const next = { ...prev };
-                          delete next[color];
-                          return next;
-                        });
-                      }}
-                      className="ml-1 text-button hover:text-foreground transition-colors"
-                    >
-                      &times;
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          <ColorMultiSelect
+            selected={colors}
+            onChange={(next) => {
+              setColors(next);
+              setColorImages((prev) => {
+                const pruned: Record<string, string> = {};
+                for (const c of next) {
+                  if (prev[c]) pruned[c] = prev[c];
+                }
+                return pruned;
+              });
+            }}
+          />
 
           {/* Per-color images */}
           {colors.length > 0 && (
