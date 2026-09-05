@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { OrderStatusTracker } from '@/components/OrderStatusTracker';
 import { CancelOrderModal } from '@/components/CancelOrderModal';
 import Image from 'next/image';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 
 export default function OrderDetail() {
   const router = useRouter();
@@ -238,6 +239,7 @@ export default function OrderDetail() {
                         src={item.product.imageUrl}
                         alt={item.product.name}
                         fill
+                        sizes={IMAGE_SIZES.orderThumbLg}
                         className="object-cover"
                       />
                     ) : (

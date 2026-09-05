@@ -168,7 +168,7 @@ export default function HelpCenter() {
           {/* Contact Support CTA */}
           <div className="mt-16 bg-button rounded-2xl p-8 text-center text-button-text">
             <h2 className="text-2xl font-bold mb-4">Still need help?</h2>
-            <p className="text-primary-100 mb-6">
+            <p className="text-button-text/90 mb-6">
               Our support team is here to assist you with any questions or concerns.
             </p>
             <Link

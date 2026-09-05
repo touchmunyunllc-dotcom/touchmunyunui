@@ -9,9 +9,10 @@ export interface CartItem {
   quantity: number;
   subtotal: number;
   selectedColor?: string;
-  selectedSize?: number;
+  selectedSize?: string;
   customNumber?: string;
   writingColor?: string;
+  customizationPolicy?: string;
 }
 
 export interface CartSummary {
@@ -32,7 +33,7 @@ export const cartService = {
     productId: string,
     quantity: number,
     selectedColor?: string,
-    selectedSize?: number,
+    selectedSize?: string,
     customNumber?: string,
     writingColor?: string
   ): Promise<CartItem> {

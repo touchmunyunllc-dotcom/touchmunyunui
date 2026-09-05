@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { VersionInfo } from './VersionInfo';
-import { CouponSlider } from './CouponSlider';
 import { ScrollToTop } from './ScrollToTop';
 import { PaymentMethods } from './PaymentMethods';
 
@@ -47,10 +46,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
   }, [userMenuOpen]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-primary">
-      {/* Coupon Slider - Only for customers */}
-      {user?.role !== 'admin' && <CouponSlider />}
-      
+    <div className="min-h-screen flex flex-col bg-primary overflow-x-hidden w-full">
       {/* Modern Navigation */}
       <nav className="bg-account-menu backdrop-blur-md shadow-glass sticky top-0 z-50 border-b border-foreground/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -801,7 +797,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
         </div>
       </nav>
 
-      <main className="flex-grow">{children}</main>
+      <main className="flex-grow w-full min-w-0 overflow-x-hidden">{children}</main>
 
       {/* Sports Background Section Above Footer */}
       <section className="relative overflow-hidden bg-black py-20">
@@ -812,7 +808,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
             backgroundImage: `url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')`,
             backgroundPosition: 'center',
             backgroundSize: 'cover',
-            backgroundAttachment: 'fixed',
           }}
         >
           {/* Dark Overlay for Readability */}
@@ -864,7 +859,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
             backgroundImage: `url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')`,
             backgroundPosition: 'center',
             backgroundSize: 'cover',
-            backgroundAttachment: 'fixed',
           }}
         >
           {/* Dark Overlay for Readability */}

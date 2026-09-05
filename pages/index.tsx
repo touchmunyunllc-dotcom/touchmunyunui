@@ -12,7 +12,6 @@ import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { productService, Product } from '@/services/productService';
 import { slideshowService, Slide } from '@/services/slideshowService';
-import { useCart } from '@/context/CartContext';
 import { notificationService } from '@/services/notificationService';
 
 export default function Home() {
@@ -20,7 +19,6 @@ export default function Home() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [loading, setLoading] = useState(true);
   const [slidesLoading, setSlidesLoading] = useState(true);
-  const { addItem } = useCart();
   
   // Limit to 8 featured products for homepage preview
   const FEATURED_PRODUCTS_LIMIT = 8;
@@ -31,10 +29,10 @@ export default function Home() {
       id: 'fallback-1',
       imageUrl: '/images/sports/Slide1.jpeg',
       alt: 'Sports slide 1',
-      title: 'Handcrafted fashion for',
-      subtitle: 'bold, modern sportswear.',
-      ctaText: 'Shop Now',
-      ctaLink: '/products',
+      title: 'New season drops',
+      subtitle: 'Fresh sportswear for training, game day & everyday wear.',
+      ctaText: 'Shop New Arrivals',
+      ctaLink: '/new-arrivals',
       order: 1,
       isActive: true,
     },
@@ -42,9 +40,9 @@ export default function Home() {
       id: 'fallback-2',
       imageUrl: '/images/sports/Slide2.jpeg',
       alt: 'Sports slide 2',
-      title: 'Premium Quality',
-      subtitle: 'Discover our curated collection of premium handcrafted treasures',
-      ctaText: 'Explore Products',
+      title: 'Custom wristbands',
+      subtitle: 'Pick band color, writing color & your number — made to order.',
+      ctaText: 'Design Yours',
       ctaLink: '/products',
       order: 2,
       isActive: true,
@@ -53,10 +51,10 @@ export default function Home() {
       id: 'fallback-3',
       imageUrl: '/images/sports/Slide3.jpeg',
       alt: 'Sports slide 3',
-      title: 'Dynamic Sports Collection',
-      subtitle: 'From football to tennis, experience the dynamics of sports',
-      ctaText: 'View Collection',
-      ctaLink: '/products',
+      title: "Women's crop tops",
+      subtitle: 'Bold cuts in our full color palette — XS through XL.',
+      ctaText: 'Shop Women\'s',
+      ctaLink: '/collections',
       order: 3,
       isActive: true,
     },
@@ -64,9 +62,9 @@ export default function Home() {
       id: 'fallback-4',
       imageUrl: '/images/sports/Slide4.jpeg',
       alt: 'Sports slide 4',
-      title: 'Artistry Meets Sophistication',
-      subtitle: 'Unique handcrafted treasures that elevate your lifestyle',
-      ctaText: 'Shop Now',
+      title: 'Men\'s & unisex styles',
+      subtitle: 'Long and short sleeve tees built for movement.',
+      ctaText: 'Browse Tees',
       ctaLink: '/products',
       order: 4,
       isActive: true,
@@ -75,10 +73,10 @@ export default function Home() {
       id: 'fallback-5',
       imageUrl: '/images/sports/Slide5.jpeg',
       alt: 'Sports slide 5',
-      title: 'Premium Sportswear',
-      subtitle: 'Handpicked selections from our premium collection',
-      ctaText: 'Discover More',
-      ctaLink: '/products',
+      title: 'Best sellers',
+      subtitle: 'Top picks from the TouchMunyun community.',
+      ctaText: 'See Best Sellers',
+      ctaLink: '/best-sellers',
       order: 5,
       isActive: true,
     },
@@ -86,8 +84,8 @@ export default function Home() {
       id: 'fallback-6',
       imageUrl: '/images/sports/Slide6.jpeg',
       alt: 'Sports slide 6',
-      title: 'Elevate Your Style',
-      subtitle: 'Where passion meets performance in every piece',
+      title: 'Built for performance',
+      subtitle: 'Handcrafted pieces where passion meets everyday wear.',
       ctaText: 'Start Shopping',
       ctaLink: '/products',
       order: 6,
@@ -134,25 +132,11 @@ export default function Home() {
     fetchSlides();
   }, []);
 
-  const handleAddToCart = async (product: Product) => {
-    try {
-      await addItem({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.imageUrl,
-      });
-      notificationService.success(`${product.name} added to cart!`);
-    } catch (error) {
-      // Error already handled in CartContext
-    }
-  };
-
-  // Get featured products (limit to 8, show newest products in stock)
-  const featuredProducts = products
-    .filter(p => p.stock > 0)
-    .slice(0, FEATURED_PRODUCTS_LIMIT);
+  // Featured products: flagged items first, then fill from the rest in stock
+  const inStock = products.filter((p) => p.stock > 0);
+  const flagged = inStock.filter((p) => p.isFeatured);
+  const rest = inStock.filter((p) => !p.isFeatured);
+  const featuredProducts = [...flagged, ...rest].slice(0, FEATURED_PRODUCTS_LIMIT);
 
   return (
     <>
@@ -167,17 +151,16 @@ export default function Home() {
         <CollectionBanner />
         
       {slidesLoading ? (
-        <div className="relative overflow-hidden bg-black h-[500px] sm:h-[600px] lg:h-[700px] flex items-center justify-center">
+        <div className="flex aspect-[5/4] sm:aspect-[3/2] md:aspect-auto md:h-[min(68vh,760px)] md:min-h-[460px] bg-black items-center justify-center">
           <LoadingSpinner size="lg" />
         </div>
       ) : (
         <HeroSlider slides={slides.length > 0 ? slides : fallbackSlides} autoPlayInterval={5000} />
       )}
-      
-      {/* Value Proposition Section with Dramatic Sports Background */}
+
+      {/* Value Proposition Section */}
       <section className="py-24 md:py-32 bg-black relative overflow-hidden">
-        {/* Dramatic Sports Background - Basketball Style */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')`,
@@ -186,35 +169,29 @@ export default function Home() {
             backgroundAttachment: 'fixed',
           }}
         >
-          {/* Minimal Overlay - Maximum Background Visibility Like Basketball Image */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/30" />
-          
-          {/* Very Subtle Lighting Overlay - Just for Depth */}
-          <div 
+          <div
             className="absolute inset-0"
             style={{
-              background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.4) 100%)'
+              background:
+                'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.4) 100%)',
             }}
           />
-          
-          {/* Subtle Red Accent Overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-red-600/8 via-transparent to-red-600/5" />
-          
-          {/* Subtle Gold Accent Overlay */}
           <div className="absolute inset-0 bg-gradient-to-tl from-transparent via-transparent to-gold-600/4" />
         </div>
 
-        {/* Floating Sports Elements - Minimal opacity for maximum text clarity */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-red-600/5 rounded-full blur-3xl animate-float animation-delay-200" />
         <div className="absolute bottom-20 right-10 w-40 h-40 bg-gold-600/5 rounded-full blur-3xl animate-float animation-delay-400" />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            {/* Text Container with Strong Background for Maximum Clarity */}
             <div className="inline-block bg-black/70 backdrop-blur-md rounded-3xl px-10 py-8 md:px-16 md:py-12 border-2 border-white/20 shadow-2xl">
               <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-8 drop-shadow-[0_6px_20px_rgba(0,0,0,1)] leading-tight tracking-tight">
                 <span className="block mb-2">Handcrafted fashion for</span>
-                <span className="block text-red-600 drop-shadow-[0_6px_20px_rgba(220,38,38,1)]">bold, modern sportswear.</span>
+                <span className="block text-red-600 drop-shadow-[0_6px_20px_rgba(220,38,38,1)]">
+                  bold, modern sportswear.
+                </span>
               </h2>
               <p className="text-2xl sm:text-3xl md:text-4xl text-white max-w-4xl mx-auto leading-relaxed drop-shadow-[0_4px_16px_rgba(0,0,0,1)] font-bold">
                 where artistry meets sophistication, offering unique handcrafted treasures that elevate your lifestyle.
@@ -270,7 +247,7 @@ export default function Home() {
               Featured Products
             </h2>
             <p className="text-xl text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              Handpicked selections from our premium collection
+              Explore our latest in-stock pieces
             </p>
           </div>
 
@@ -285,14 +262,9 @@ export default function Home() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+              <div className="grid grid-auto-fill-lg gap-8 mb-12 items-stretch [&>*]:min-w-0">
                 {featuredProducts.map((product) => (
-                  <Link key={product.id} href={`/product/${product.id}`}>
-                    <ProductCard
-                      product={product}
-                      onAddToCart={handleAddToCart}
-                    />
-                  </Link>
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
               

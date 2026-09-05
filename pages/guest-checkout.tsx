@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 import Link from 'next/link';
 import { Layout } from '@/components/Layout';
 import { SEO } from '@/components/SEO';
@@ -9,10 +10,12 @@ import { useCart } from '@/context/CartContext';
 import { guestService, GuestCheckoutPreview } from '@/services/guestService';
 import { getStripe } from '@/services/stripeService';
 import { notificationService } from '@/services/notificationService';
+import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
 import { useRecaptcha } from '@/utils/useRecaptcha';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '@/components/StripePaymentForm';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { dedupeGuestCartLines } from '@/services/productCustomizationService';
 
 const CURRENCY = 'usd';
 
@@ -24,6 +27,7 @@ export default function GuestCheckoutPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { items, total, clearCart, ensureGuestCartLoaded } = useCart();
+  const cartLines = useMemo(() => dedupeGuestCartLines(items), [items]);
   const { executeRecaptcha } = useRecaptcha();
 
   const [email, setEmail] = useState('');
@@ -47,21 +51,21 @@ export default function GuestCheckoutPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   const mapItems = useCallback(() => {
-    return items.map((i) => ({
+    return cartLines.map((i) => ({
       productId: String(i.productId ?? '').trim(),
       name: i.name,
       price: i.price,
       quantity: i.quantity,
-      selectedColor: i.selectedColor,
-      selectedSize: i.selectedSize,
-      customNumber: i.customNumber,
-      writingColor: i.writingColor,
+      selectedColor: i.selectedColor ?? undefined,
+      selectedSize: i.selectedSize ?? undefined,
+      customNumber: i.customNumber ?? undefined,
+      writingColor: i.writingColor ?? undefined,
     }));
-  }, [items]);
+  }, [cartLines]);
 
   const runPreview = useCallback(async () => {
-    if (items.length === 0) return;
-    for (const i of items) {
+    if (cartLines.length === 0) return;
+    for (const i of cartLines) {
       if (!isValidUuid(String(i.productId ?? ''))) {
         notificationService.error('Invalid product in cart. Please remove the item and add it again.');
         return;
@@ -74,15 +78,13 @@ export default function GuestCheckoutPage() {
         couponRef.current.trim() || undefined
       );
       setPreview(p);
-    } catch (e: any) {
-      notificationService.error(
-        e.response?.data?.message || e.message || 'Could not calculate order total'
-      );
+    } catch (e) {
+      notificationService.apiError(e, 'Could not calculate order total');
       setPreview(null);
     } finally {
       setPreviewLoading(false);
     }
-  }, [items, mapItems]);
+  }, [cartLines, mapItems]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -92,7 +94,7 @@ export default function GuestCheckoutPage() {
 
   useEffect(() => {
     if (!router.isReady || isAuthenticated) return;
-    if (items.length === 0) {
+    if (cartLines.length === 0) {
       // Buy Now may navigate before React state flushes; cookie is written sync in addItem
       if (!ensureGuestCartLoaded()) {
         router.replace('/cart');
@@ -100,7 +102,7 @@ export default function GuestCheckoutPage() {
       return;
     }
     void runPreview();
-  }, [router.isReady, isAuthenticated, items.length, router, runPreview, ensureGuestCartLoaded]);
+  }, [router.isReady, isAuthenticated, cartLines.length, router, runPreview, ensureGuestCartLoaded]);
 
   const validateShipping = (): boolean => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -154,10 +156,8 @@ export default function GuestCheckoutPage() {
 
       setClientSecret(res.clientSecret);
       setShowPaymentForm(true);
-    } catch (e: any) {
-      notificationService.error(
-        e.response?.data?.message || e.message || 'Could not start payment'
-      );
+    } catch (e) {
+      notificationService.apiError(e, 'Could not start payment');
     } finally {
       setSubmitLoading(false);
     }
@@ -173,7 +173,7 @@ export default function GuestCheckoutPage() {
     );
   }
 
-  if (items.length === 0) {
+  if (cartLines.length === 0) {
     return null;
   }
 
@@ -294,13 +294,14 @@ export default function GuestCheckoutPage() {
             <div className="bg-primary/80 rounded-2xl shadow-lg p-6 border border-foreground/20">
               <h2 className="text-xl font-semibold text-foreground mb-4">Items</h2>
               <div className="space-y-4">
-                {items.map((item) => (
+                {cartLines.map((item) => (
                   <div key={item.id} className="flex gap-4 items-center border-b border-foreground/10 pb-4">
                     <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-primary/60">
                       <Image
                         src={item.image || '/placeholder.png'}
                         alt={item.name}
                         fill
+                        sizes={IMAGE_SIZES.cartThumb}
                         className="object-cover"
                       />
                     </div>
@@ -355,6 +356,7 @@ export default function GuestCheckoutPage() {
                     <span>Total</span>
                     <span>${preview.totalAmount.toFixed(2)}</span>
                   </div>
+                  <CustomizationPolicyNotice items={items} className="pt-3" />
                 </div>
               )}
               <p className="text-xs text-foreground/60 mb-4">

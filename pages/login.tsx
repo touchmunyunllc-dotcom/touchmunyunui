@@ -6,6 +6,9 @@ import { SEO } from '@/components/SEO';
 import { useAuth } from '@/context/AuthContext';
 import { notificationService } from '@/services/notificationService';
 
+/** Google OAuth hidden for now — email/password login only. */
+const SHOW_GOOGLE_LOGIN = false;
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,12 +55,9 @@ export default function Login() {
     try {
       await login(email.trim(), password);
       notificationService.success('Welcome back!');
-    } catch (error: any) {
+    } catch (error) {
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        (Array.isArray(error?.response?.data?.errors) ? error.response.data.errors.join(', ') : null) ||
-        error?.message ||
+        (error as Error & { userMessage?: string }).userMessage ||
         'Login failed. Please check your credentials.';
       setAuthError(errorMessage);
       notificationService.error(errorMessage);
@@ -111,12 +111,7 @@ export default function Login() {
               <p className="text-foreground/80">Sign in to your account to continue</p>
             </div>
 
-            {/* Form */}
-            <form 
-              className="space-y-6" 
-              onSubmit={handleSubmit}
-              noValidate
-            >
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
               {authError && (
                 <div
                   className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
@@ -302,8 +297,7 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-6">
+            <div className={`relative my-6 ${SHOW_GOOGLE_LOGIN ? '' : 'hidden'}`}>
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-foreground/20"></div>
               </div>
@@ -312,8 +306,8 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Social Login Buttons */}
-            <div className="flex justify-center">
+            {/* Google sign-in — hidden for now */}
+            <div className={`flex justify-center ${SHOW_GOOGLE_LOGIN ? '' : 'hidden'}`}>
               <a
                 href="/api/auth/external/Google"
                 className="flex items-center justify-center gap-2 px-6 py-3 border border-foreground/20 rounded-xl hover:bg-primary transition-colors group w-full"
@@ -340,7 +334,6 @@ export default function Login() {
               </a>
             </div>
 
-            {/* Footer */}
             <div className="mt-6 text-center">
               <p className="text-sm text-foreground/70">
                 Don&apos;t have an account?{' '}

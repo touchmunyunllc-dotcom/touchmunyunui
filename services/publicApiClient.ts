@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getApiBaseUrl } from './apiBaseUrl';
+import { getApiErrorMessage } from '@/lib/apiError';
 
 /**
  * No Authorization header and no global 401 → /login redirect.
@@ -11,5 +12,14 @@ const publicApiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+publicApiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const userMessage = getApiErrorMessage(error);
+    (error as Error & { userMessage?: string }).userMessage = userMessage;
+    return Promise.reject(error);
+  }
+);
 
 export default publicApiClient;

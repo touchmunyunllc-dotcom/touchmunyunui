@@ -6,7 +6,7 @@ export interface GuestOrderItemPayload {
   price: number;
   quantity: number;
   selectedColor?: string;
-  selectedSize?: number;
+  selectedSize?: string;
   customNumber?: string;
   writingColor?: string;
 }
@@ -49,13 +49,14 @@ export interface GuestOrderLine {
   quantity: number;
   price: number;
   selectedColor?: string;
-  selectedSize?: number;
+  selectedSize?: string;
   customNumber?: string;
   writingColor?: string;
   product?: {
     id: string;
     name: string;
     imageUrl?: string;
+    customizationPolicy?: string | null;
   };
 }
 

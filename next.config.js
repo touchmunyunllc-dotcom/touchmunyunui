@@ -73,6 +73,15 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/product/:id',
+        destination: '/products/:id',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

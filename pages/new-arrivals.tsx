@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Layout } from '@/components/Layout';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { ProductCard } from '@/components/ProductCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { productService, Product } from '@/services/productService';
-import { useCart } from '@/context/CartContext';
 import { notificationService } from '@/services/notificationService';
 
 export default function NewArrivals() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -28,21 +25,6 @@ export default function NewArrivals() {
 
     fetchProducts();
   }, []);
-
-  const handleAddToCart = async (product: Product) => {
-    try {
-      await addItem({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.imageUrl,
-      });
-      notificationService.success(`${product.name} added to cart!`);
-    } catch (error) {
-      // Error already handled in CartContext
-    }
-  };
 
   return (
     <>
@@ -63,47 +45,32 @@ export default function NewArrivals() {
         }}
       />
       <Layout>
-      <div className="bg-primary py-20 relative overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 opacity-30" style={{
-          background: 'radial-gradient(ellipse at center, rgba(220, 38, 38, 0.1) 0%, transparent 70%)'
-        }} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-            New Arrivals
-          </h1>
-          <p className="text-xl text-foreground/80">
-            Discover our latest handcrafted treasures
-          </p>
-        </div>
-      </div>
+        <section className="bg-primary pb-8 overflow-x-hidden">
+          <div className="page-shell pt-4">
+            <div className="mb-4 border-b border-foreground/10 pb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                New <span className="text-red-500">Arrivals</span>
+              </h1>
+            </div>
 
-      <section className="py-12 bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-xl text-foreground/70">No new arrivals at the moment.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {products.map((product) => (
-                <Link key={product.id} href={`/product/${product.id}`}>
-                  <ProductCard
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                  />
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-    </Layout>
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-foreground/70">No new arrivals at the moment.</p>
+              </div>
+            ) : (
+              <div className="grid grid-auto-fill-lg gap-6 sm:gap-8 items-stretch [&>*]:min-w-0">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </Layout>
     </>
   );
 }
-

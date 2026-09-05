@@ -47,7 +47,7 @@ function generateSitemap(products: ProductData[] = []) {
   const productEntries = products
     .map(
       (product) => `  <url>
-    <loc>${baseUrl}/product/${product.id}</loc>
+    <loc>${baseUrl}/products/${product.id}</loc>
     <lastmod>${product.updatedAt || currentDate}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>${

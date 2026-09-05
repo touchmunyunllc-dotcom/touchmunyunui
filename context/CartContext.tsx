@@ -1,10 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import Cookies from 'js-cookie';
 import { useAuth } from './AuthContext';
 import { cartService } from '@/services/cartService';
 import { notificationService } from '@/services/notificationService';
+import { ADMIN_SHOPPING_BLOCKED_MESSAGE, isAdminUser } from '@/lib/adminShopping';
+import { sameCartVariant, dedupeGuestCartLines, mergeGuestCartLine, type GuestCartMergeMode } from '@/services/productCustomizationService';
+
+const GUEST_CART_COOKIE = 'cart';
+const GUEST_CART_COOKIE_OPTS = { expires: 7, path: '/' } as const;
 
 interface CartItem {
   id: string;
@@ -14,15 +19,16 @@ interface CartItem {
   quantity: number;
   image: string;
   selectedColor?: string;
-  selectedSize?: number;
+  selectedSize?: string;
   customNumber?: string;
   writingColor?: string;
+  customizationPolicy?: string;
 }
 
 /** When multiple cart lines share the same productId (different color/size), pass this so the correct line is updated. */
 export type CartLineKey = {
   selectedColor?: string;
-  selectedSize?: number;
+  selectedSize?: string;
   customNumber?: string;
   writingColor?: string;
   /** Server cart row id — most precise when available */
@@ -31,10 +37,12 @@ export type CartLineKey = {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'id'>) => Promise<void>;
+  addItem: (item: Omit<CartItem, 'id'>, options?: { merge?: GuestCartMergeMode }) => Promise<void>;
   removeItem: (productId: string, line?: CartLineKey) => Promise<void>;
   updateQuantity: (productId: string, quantity: number, line?: CartLineKey) => Promise<void>;
   clearCart: () => Promise<void>;
+  /** Sync read of guest cart (cookie written immediately on add — use after Add to cart). */
+  readGuestCart: () => CartItem[];
   /** Re-read guest cookie into state (Buy Now → guest-checkout race). */
   ensureGuestCartLoaded: () => boolean;
   subtotal: number;
@@ -43,18 +51,6 @@ interface CartContextType {
   total: number;
   itemCount: number;
   loading: boolean;
-}
-
-function sameVariant(
-  a: { selectedColor?: string; selectedSize?: number; customNumber?: string; writingColor?: string },
-  b: { selectedColor?: string; selectedSize?: number; customNumber?: string; writingColor?: string }
-) {
-  return (
-    (a.selectedColor ?? '') === (b.selectedColor ?? '') &&
-    (a.selectedSize ?? null) === (b.selectedSize ?? null) &&
-    (a.customNumber ?? '') === (b.customNumber ?? '') &&
-    (a.writingColor ?? '') === (b.writingColor ?? '')
-  );
 }
 
 function findCartLine(
@@ -67,7 +63,7 @@ function findCartLine(
   }
   if (line && (line.selectedColor !== undefined || line.selectedSize !== undefined)) {
     return items.find(
-      (i) => i.productId === productId && sameVariant(i, line)
+      (i) => i.productId === productId && sameCartVariant(i, line)
     );
   }
   return items.find((i) => i.productId === productId);
@@ -86,6 +82,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const guestTaxRate = 0.1;
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   // Load cart on mount and when user changes
   useEffect(() => {
@@ -113,7 +111,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
               const existing = serverCart?.items.find(
                 (s) =>
                   s.productId === item.productId &&
-                  sameVariant(s, item)
+                  sameCartVariant(s, item)
               );
               const nextQty = Math.min(
                 10,
@@ -142,13 +140,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
                   selectedSize: item.selectedSize,
                   customNumber: item.customNumber,
                   writingColor: item.writingColor,
+                  customizationPolicy: item.customizationPolicy,
                 });
               }
             } catch (mergeError) {
               console.error('Failed to merge guest cart line:', mergeError);
             }
           }
-          Cookies.remove('cart');
+          Cookies.remove(GUEST_CART_COOKIE, { path: '/' });
         }
 
         const cart = await cartService.getCart();
@@ -163,6 +162,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
           selectedSize: item.selectedSize,
           customNumber: item.customNumber,
           writingColor: item.writingColor,
+          customizationPolicy: item.customizationPolicy,
         }));
         setItems(mappedItems);
         setSubtotal(cart.subtotal || 0);
@@ -181,11 +181,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const parseGuestCartCookie = (): CartItem[] => {
-    const savedCart = Cookies.get('cart');
+    const savedCart = Cookies.get(GUEST_CART_COOKIE);
     if (!savedCart) return [];
     try {
       const parsed = JSON.parse(savedCart) as Array<Partial<CartItem>>;
-      return parsed
+      const normalized = parsed
         .map((item, index) => {
           const productId = String(item.productId ?? item.id ?? '').trim();
           const lineId = String(item.id ?? `${productId}-${index}`).trim();
@@ -201,9 +201,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
             selectedSize: item.selectedSize,
             customNumber: item.customNumber,
             writingColor: item.writingColor,
+            customizationPolicy: item.customizationPolicy,
           };
         })
         .filter((item) => item.productId.length > 0 && item.quantity > 0);
+      return dedupeGuestCartLines(normalized) as CartItem[];
     } catch (error) {
       console.error('Failed to parse cart from cookies', error);
       return [];
@@ -212,11 +214,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadLocalCart = () => {
     const normalized = parseGuestCartCookie();
-    if (normalized.length > 0) {
-      setItems(normalized);
-      updateGuestSummary(normalized);
-    }
+    setItems(normalized);
+    persistGuestCart(normalized);
   };
+
+  const readGuestCart = useCallback((): CartItem[] => {
+    const fromCookie = parseGuestCartCookie();
+    if (fromCookie.length > 0) return fromCookie;
+    return dedupeGuestCartLines(itemsRef.current) as CartItem[];
+  }, []);
 
   const ensureGuestCartLoaded = (): boolean => {
     if (isAuthenticated) return items.length > 0;
@@ -240,18 +246,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     setTotal(nextSubtotal + nextTax);
   };
 
-  // Save to local storage for guest users
-  useEffect(() => {
-    if (!isAuthenticated && items.length > 0) {
-      Cookies.set('cart', JSON.stringify(items), { expires: 7 });
-      updateGuestSummary(items);
-    } else if (!isAuthenticated && items.length === 0) {
-      Cookies.remove('cart');
-      updateGuestSummary([]);
+  const persistGuestCart = (guestItems: CartItem[]) => {
+    if (guestItems.length === 0) {
+      Cookies.remove(GUEST_CART_COOKIE, { path: '/' });
+    } else {
+      Cookies.set(GUEST_CART_COOKIE, JSON.stringify(guestItems), GUEST_CART_COOKIE_OPTS);
     }
+    updateGuestSummary(guestItems);
+  };
+
+  // Backup sync when items change from React state (e.g. after hydration).
+  useEffect(() => {
+    if (isAuthenticated || items.length === 0) return;
+    const deduped = dedupeGuestCartLines(items) as CartItem[];
+    if (deduped.length !== items.length) {
+      setItems(deduped);
+      return;
+    }
+    Cookies.set(GUEST_CART_COOKIE, JSON.stringify(deduped), GUEST_CART_COOKIE_OPTS);
+    updateGuestSummary(deduped);
   }, [items, isAuthenticated]);
 
-  const addItem = async (item: Omit<CartItem, 'id'>) => {
+  const addItem = async (item: Omit<CartItem, 'id'>, options?: { merge?: GuestCartMergeMode }) => {
+    const mergeMode = options?.merge ?? 'add';
+
+    if (isAuthenticated && isAdminUser(user)) {
+      notificationService.error(ADMIN_SHOPPING_BLOCKED_MESSAGE);
+      throw new Error(ADMIN_SHOPPING_BLOCKED_MESSAGE);
+    }
+
     if (isAuthenticated && user) {
       try {
         setLoading(true);
@@ -266,28 +289,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         await loadCart();
       } catch (error: any) {
         console.error('Failed to add item to cart:', error);
-        notificationService.error(
-          error.response?.data?.message || 'Failed to add item to cart'
-        );
+        notificationService.apiError(error, 'Failed to add item to cart');
         throw error;
       } finally {
         setLoading(false);
       }
     } else {
-      // Sync cookie before navigate (Buy Now → guest-checkout)
-      const existingItem = items.find(
-        (i) => i.productId === item.productId && sameVariant(i, item)
-      );
-      const nextItems = existingItem
-        ? items.map((i) =>
-            i.productId === item.productId && sameVariant(i, item)
-              ? { ...i, quantity: item.quantity }
-              : i
-          )
-        : [...items, { ...item, id: Date.now().toString() }];
-      Cookies.set('cart', JSON.stringify(nextItems), { expires: 7 });
-      setItems(nextItems);
-      updateGuestSummary(nextItems);
+      setItems((prevItems) => {
+        const nextItems = dedupeGuestCartLines(
+          mergeGuestCartLine(prevItems as Parameters<typeof mergeGuestCartLine>[0], item, mergeMode)
+        ) as CartItem[];
+        persistGuestCart(nextItems);
+        return nextItems;
+      });
     }
   };
 
@@ -311,9 +325,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         const nextItems = prevItems.filter((i) => {
           if (i.productId !== productId) return true;
           if (!line) return false;
-          return !sameVariant(i, line);
+          return !sameCartVariant(i, line);
         });
-        updateGuestSummary(nextItems);
+        persistGuestCart(nextItems);
         return nextItems;
       });
     }
@@ -350,11 +364,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     } else {
       setItems((prevItems) => {
         const nextItems = prevItems.map((i) =>
-          i.productId === productId && (!line || sameVariant(i, line))
+          i.productId === productId && (!line || sameCartVariant(i, line))
             ? { ...i, quantity }
             : i
         );
-        updateGuestSummary(nextItems);
+        persistGuestCart(nextItems);
         return nextItems;
       });
     }
@@ -374,10 +388,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } else {
       setItems([]);
-      updateGuestSummary([]);
+      persistGuestCart([]);
     }
   };
-  const itemCount = items.length;
+  const itemCount = isAuthenticated
+    ? items.length
+    : dedupeGuestCartLines(items).length;
 
   return (
     <CartContext.Provider
@@ -388,6 +404,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         updateQuantity,
         clearCart,
         ensureGuestCartLoaded,
+        readGuestCart,
         subtotal,
         tax,
         discount,

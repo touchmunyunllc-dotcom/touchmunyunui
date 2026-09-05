@@ -287,7 +287,7 @@ export default function ContactUs() {
                     rows={6}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-800/50 rounded-lg focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 bg-gray-900/60 backdrop-blur-sm text-gray-300 placeholder-gray-500 resize-none shadow-glass"
+                    className="w-full px-4 py-3 border border-foreground/20 rounded-lg focus:ring-2 focus:ring-button/50 focus:border-button/50 bg-primary/80 backdrop-blur-sm text-foreground placeholder-foreground/50 resize-none shadow-glass"
                     placeholder="Tell us how we can help..."
                   />
                 </div>

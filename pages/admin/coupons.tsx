@@ -8,10 +8,21 @@ import { CouponForm } from '@/components/CouponForm';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Pagination } from '@/components/Pagination';
+import {
+  adminGridWrapperClassName,
+  adminGridTableClassName,
+  adminGridHeadClassName,
+  adminGridHeadCellClassName,
+  adminGridBodyClassName,
+  adminGridRowClassName,
+  adminGridCellClassName,
+} from '@/lib/adminFormStyles';
+import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
 
 export default function AdminCoupons() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const dashboardReturnTab = getAdminReturnTab('actions');
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -110,13 +121,13 @@ export default function AdminCoupons() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-primary min-h-screen">
         <div className="mb-4">
           <Link
-            href="/admin"
+            href={adminDashboardHref(dashboardReturnTab)}
             className="inline-flex items-center text-button hover:text-button-200 font-medium transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Dashboard
+            {getAdminBackLabel(dashboardReturnTab)}
           </Link>
         </div>
         <div className="flex justify-between items-center mb-8">
@@ -147,59 +158,45 @@ export default function AdminCoupons() {
             />
           </div>
         ) : (
-          <div className="bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg overflow-hidden border-2 border-foreground/10">
-            <table className="min-w-full divide-y divide-foreground/10">
-              <thead className="bg-primary/60 backdrop-blur-sm">
+          <div className={adminGridWrapperClassName}>
+            <table className={adminGridTableClassName}>
+              <thead className={adminGridHeadClassName}>
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Code
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Value
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Min Purchase
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Usage
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase">
-                    Actions
-                  </th>
+                  <th className={adminGridHeadCellClassName}>Code</th>
+                  <th className={adminGridHeadCellClassName}>Type</th>
+                  <th className={adminGridHeadCellClassName}>Value</th>
+                  <th className={adminGridHeadCellClassName}>Min Purchase</th>
+                  <th className={adminGridHeadCellClassName}>Usage</th>
+                  <th className={adminGridHeadCellClassName}>Status</th>
+                  <th className={adminGridHeadCellClassName}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-primary/40 divide-y divide-foreground/10">
+              <tbody className={adminGridBodyClassName}>
                 {coupons.map((coupon) => (
-                  <tr key={coupon.id} className="group hover:bg-primary/60 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={coupon.id} className={`group ${adminGridRowClassName}`}>
+                    <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <span className="font-bold text-gold-400">{coupon.code}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground/70">
+                    <td className={`${adminGridCellClassName} whitespace-nowrap text-foreground/70`}>
                       {coupon.discountType}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <span className="text-sm font-bold text-foreground">
                         {coupon.discountType === 'Percentage'
                           ? `${coupon.discountValue}%`
                           : `$${coupon.discountValue.toFixed(2)}`}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground/70">
+                    <td className={`${adminGridCellClassName} whitespace-nowrap text-foreground/70`}>
                       ${coupon.minPurchaseAmount.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <span className="text-sm font-semibold text-foreground">
                         {coupon.usageCount || 0}
                         {coupon.usageLimit && <span className="text-foreground/50"> / {coupon.usageLimit}</span>}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <span
                         className={`px-3 py-1 text-xs font-bold rounded-full ${
                           coupon.isActive
@@ -210,7 +207,7 @@ export default function AdminCoupons() {
                         {coupon.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleEdit(coupon)}

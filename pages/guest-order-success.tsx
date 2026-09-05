@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 import { Layout } from '@/components/Layout';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { SEO } from '@/components/SEO';
 import publicApiClient from '@/services/publicApiClient';
 import { guestService, GuestOrderDetail, GuestOrderLine } from '@/services/guestService';
 import { notificationService } from '@/services/notificationService';
+import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -90,7 +92,7 @@ export default function GuestOrderSuccess() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h1 className="text-3xl font-bold text-primary-500">Thank you!</h1>
+                <h1 className="text-3xl font-bold text-foreground">Thank you!</h1>
                 <p className="text-foreground/80">
                   Your payment was received. Your order number is{' '}
                   <span className="font-semibold text-button">{orderCode}</span>.
@@ -114,6 +116,7 @@ export default function GuestOrderSuccess() {
                               src={line.product.imageUrl}
                               alt={line.product.name || 'Product'}
                               fill
+                              sizes={IMAGE_SIZES.orderThumb}
                               className="object-cover"
                             />
                           ) : (
@@ -167,6 +170,14 @@ export default function GuestOrderSuccess() {
               <p className="text-sm text-center text-foreground/60">
                 Save this order number for your records.
               </p>
+              <CustomizationPolicyNotice
+                variant="boxed"
+                items={(orderDetail?.orderItems ?? []).map((line) => ({
+                  customNumber: line.customNumber,
+                  writingColor: line.writingColor,
+                  customizationPolicy: line.product?.customizationPolicy,
+                }))}
+              />
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/products"

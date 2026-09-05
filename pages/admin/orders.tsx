@@ -7,7 +7,10 @@ import { OrderList } from '@/components/OrderList';
 import { orderService, Order } from '@/services/orderService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Pagination } from '@/components/Pagination';
 import apiClient from '@/services/apiClient';
+import { adminSelectClassName, adminSelectOptionProps } from '@/lib/adminFormStyles';
+import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
 
 interface AdminOrder {
   id: string;
@@ -29,6 +32,8 @@ interface AdminOrder {
   createdAt: string;
   updatedAt?: string;
   orderItems?: Array<{
+    productId?: string;
+    imageUrl?: string;
     productName: string;
     productSku?: string;
     quantity: number;
@@ -43,6 +48,7 @@ interface AdminOrder {
 export default function AdminOrders() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const dashboardReturnTab = getAdminReturnTab('orders');
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
@@ -99,7 +105,11 @@ export default function AdminOrders() {
     }
 
     fetchOrders();
-  }, [isAuthenticated, user, router.isReady, router.query.status, filters.status, filters.startDate, filters.endDate, pagination.page]);
+  }, [isAuthenticated, user, router.isReady, router.query.status, filters.status, filters.startDate, filters.endDate, pagination.page, pagination.pageSize]);
+
+  const handlePageSizeChange = (pageSize: number) => {
+    setPagination((prev) => ({ ...prev, page: 1, pageSize }));
+  };
 
   const fetchOrders = async () => {
     try {
@@ -138,11 +148,11 @@ export default function AdminOrders() {
       const totalPages = data.totalPages || data.TotalPages || 0;
       
       setOrders(ordersList);
-      setPagination({
-        ...pagination,
+      setPagination((prev) => ({
+        ...prev,
         totalCount,
-        totalPages,
-      });
+        totalPages: totalPages || Math.max(1, Math.ceil(totalCount / prev.pageSize)),
+      }));
     } catch (error) {
       notificationService.error('Failed to load orders');
     } finally {
@@ -257,20 +267,20 @@ export default function AdminOrders() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-primary min-h-screen">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-primary min-h-screen">
         <div className="mb-4">
           <Link
-            href="/admin"
+            href={adminDashboardHref(dashboardReturnTab)}
             className="inline-flex items-center text-button hover:text-button-200 font-medium transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Dashboard
+            {getAdminBackLabel(dashboardReturnTab)}
           </Link>
         </div>
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground">Admin - Orders</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-foreground">Admin - Orders</h1>
           <button
             onClick={handleExportCSV}
             className="bg-emerald-500 text-white px-6 py-3 rounded-xl hover:bg-emerald-600 font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
@@ -288,7 +298,7 @@ export default function AdminOrders() {
         </div>
 
         {/* Filters */}
-        <div className="bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg p-6 mb-6 border-2 border-foreground/10">
+        <div className="bg-primary/80 backdrop-blur-xl rounded-2xl shadow-glass-lg p-4 mb-4 border border-foreground/10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-semibold text-white mb-2">
@@ -298,18 +308,18 @@ export default function AdminOrders() {
                 value={filters.status}
                 onChange={(e) => {
                   setFilters({ ...filters, status: e.target.value });
-                  setPagination({ ...pagination, page: 1 });
+                  setPagination((prev) => ({ ...prev, page: 1 }));
                 }}
-                className="w-full px-4 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-button/50 focus:border-button/50 bg-primary/60 backdrop-blur-sm text-foreground transition-all"
+                className={adminSelectClassName}
               >
-                <option value="">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-                <option value="Packed">Packed</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="" {...adminSelectOptionProps}>All Statuses</option>
+                <option value="Pending" {...adminSelectOptionProps}>Pending</option>
+                <option value="Paid" {...adminSelectOptionProps}>Paid</option>
+                <option value="Packed" {...adminSelectOptionProps}>Packed</option>
+                <option value="Processing" {...adminSelectOptionProps}>Processing</option>
+                <option value="Shipped" {...adminSelectOptionProps}>Shipped</option>
+                <option value="Delivered" {...adminSelectOptionProps}>Delivered</option>
+                <option value="Cancelled" {...adminSelectOptionProps}>Cancelled</option>
               </select>
             </div>
             <div>
@@ -354,59 +364,15 @@ export default function AdminOrders() {
           onStatusUpdate={handleStatusUpdate}
         />
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-between bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg p-6 border-2 border-foreground/10">
-            <div className="text-sm text-foreground/80 font-medium">
-              Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
-              {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of{' '}
-              {pagination.totalCount} orders
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                disabled={pagination.page === 1}
-                className="px-4 py-2 border border-foreground/20 rounded-xl text-foreground hover:bg-primary/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
-              >
-                Previous
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (pagination.totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (pagination.page <= 3) {
-                    pageNum = i + 1;
-                  } else if (pagination.page >= pagination.totalPages - 2) {
-                    pageNum = pagination.totalPages - 4 + i;
-                  } else {
-                    pageNum = pagination.page - 2 + i;
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPagination({ ...pagination, page: pageNum })}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                        pagination.page === pageNum
-                          ? 'bg-button text-button-text shadow-lg'
-                          : 'text-foreground hover:bg-primary/60 border border-foreground/20'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                disabled={pagination.page >= pagination.totalPages}
-                className="px-4 py-2 border border-foreground/20 rounded-xl text-foreground hover:bg-primary/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          totalCount={pagination.totalCount}
+          totalPages={pagination.totalPages}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          onPageSizeChange={handlePageSizeChange}
+          itemLabel="orders"
+        />
 
         {/* Order Detail Modal */}
         {selectedOrder && (

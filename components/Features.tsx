@@ -128,7 +128,7 @@ export const Features: React.FC = () => {
         </div>
 
         {/* Enhanced Feature Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+        <div className="grid grid-auto-fill-lg gap-8 md:gap-10">
           {features.map((feature, index) => (
             <div
               key={index}

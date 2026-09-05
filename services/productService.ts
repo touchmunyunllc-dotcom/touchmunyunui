@@ -7,14 +7,22 @@ export interface Product {
   price: number;
   salePrice?: number;
   imageUrl: string;
+  images?: string[];
   category: string;
   stock: number;
   colors: string[];
-  sizes: number[];
+  sizes: string[];
   /** color name → image URL */
   colorImages?: Record<string, string>;
   /** e.g. "wristband" */
   customizationType?: string | null;
+  colorSurcharge?: number;
+  noSurchargeColors?: string[];
+  customizationPolicy?: string | null;
+  imageObjectPosition?: string | null;
+  isNewArrival?: boolean;
+  isBestSeller?: boolean;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,12 +80,20 @@ export const productService = {
     price: number;
     salePrice?: number;
     imageUrl: string;
+    images?: string[];
     category: string;
     stock: number;
     colors?: string[];
-    sizes?: number[];
+    sizes?: string[];
     colorImages?: Record<string, string>;
     customizationType?: string | null;
+    colorSurcharge?: number;
+    noSurchargeColors?: string[];
+    customizationPolicy?: string | null;
+    imageObjectPosition?: string | null;
+    isNewArrival?: boolean;
+    isBestSeller?: boolean;
+    isFeatured?: boolean;
   }) {
     const response = await apiClient.post<Product>('/products', product);
     return response.data;
@@ -90,12 +106,20 @@ export const productService = {
     salePrice?: number;
     clearSalePrice?: boolean;
     imageUrl?: string;
+    images?: string[];
     category?: string;
     stock?: number;
     colors?: string[];
-    sizes?: number[];
+    sizes?: string[];
     colorImages?: Record<string, string>;
     customizationType?: string | null;
+    colorSurcharge?: number;
+    noSurchargeColors?: string[];
+    customizationPolicy?: string | null;
+    imageObjectPosition?: string | null;
+    isNewArrival?: boolean;
+    isBestSeller?: boolean;
+    isFeatured?: boolean;
   }) {
     const response = await apiClient.put<Product>(`/products/${id}`, product);
     return response.data;

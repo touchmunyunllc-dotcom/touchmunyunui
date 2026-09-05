@@ -7,10 +7,22 @@ import { customerService, Customer } from '@/services/customerService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Pagination } from '@/components/Pagination';
+import {
+  adminGridWrapperClassName,
+  adminGridScrollClassName,
+  adminGridTableClassName,
+  adminGridHeadClassName,
+  adminGridHeadCellClassName,
+  adminGridBodyClassName,
+  adminGridRowClassName,
+  adminGridCellClassName,
+} from '@/lib/adminFormStyles';
+import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
 
 export default function AdminCustomers() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const dashboardReturnTab = getAdminReturnTab('actions');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -29,7 +41,11 @@ export default function AdminCustomers() {
     }
 
     fetchCustomers();
-  }, [isAuthenticated, user, router, pagination.page, search]);
+  }, [isAuthenticated, user, router, pagination.page, pagination.pageSize, search]);
+
+  const handlePageSizeChange = (pageSize: number) => {
+    setPagination((prev) => ({ ...prev, page: 1, pageSize }));
+  };
 
   const fetchCustomers = async () => {
     try {
@@ -88,16 +104,16 @@ export default function AdminCustomers() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-primary min-h-screen">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-primary min-h-screen">
         <div className="mb-4">
           <Link
-            href="/admin"
+            href={adminDashboardHref(dashboardReturnTab)}
             className="inline-flex items-center text-button hover:text-button-200 font-medium transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Dashboard
+            {getAdminBackLabel(dashboardReturnTab)}
           </Link>
         </div>
         <div className="flex justify-between items-center mb-8">
@@ -136,49 +152,32 @@ export default function AdminCustomers() {
         </div>
 
         {/* Customers Table */}
-        <div className="bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg overflow-hidden border-2 border-foreground/10">
-          <table className="min-w-full divide-y divide-foreground/10">
-            <thead className="bg-primary/60 backdrop-blur-sm">
+        <div className={adminGridWrapperClassName}>
+          <div className={adminGridScrollClassName}>
+          <table className={`${adminGridTableClassName} min-w-[1200px] w-full`}>
+            <thead className={adminGridHeadClassName}>
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Provider
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Total Orders
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Total Spent
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Cancellations
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-foreground uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className={adminGridHeadCellClassName}>Name</th>
+                <th className={adminGridHeadCellClassName}>Email</th>
+                <th className={adminGridHeadCellClassName}>Role</th>
+                <th className={adminGridHeadCellClassName}>Provider</th>
+                <th className={adminGridHeadCellClassName}>Total Orders</th>
+                <th className={adminGridHeadCellClassName}>Total Spent</th>
+                <th className={adminGridHeadCellClassName}>Cancellations</th>
+                <th className={adminGridHeadCellClassName}>Status</th>
+                <th className={adminGridHeadCellClassName}>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-primary/40 divide-y divide-foreground/10">
+            <tbody className={adminGridBodyClassName}>
               {customers.map((customer) => (
-                <tr key={customer.id} className="group hover:bg-primary/60 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={customer.id} className={`group ${adminGridRowClassName}`}>
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <div className="text-sm font-semibold text-foreground group-hover:text-button transition-colors">{customer.name}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <div className="text-sm text-foreground/70 group-hover:text-foreground/90 transition-colors">{customer.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${
                       customer.role === 'Admin' 
                         ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
@@ -187,16 +186,16 @@ export default function AdminCustomers() {
                       {customer.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground/70">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap text-foreground/70`}>
                     {customer.provider || 'Email'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <span className="text-sm font-semibold text-foreground">{customer.totalOrders}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <span className="text-sm font-bold text-gold-400">${customer.totalSpent.toFixed(2)}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
                       customer.cancellationCount > 0
                         ? 'text-red-400 bg-red-500/20 border border-red-500/30'
@@ -205,7 +204,7 @@ export default function AdminCustomers() {
                       {customer.cancellationCount}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     {customer.orderBlockedUntil && new Date(customer.orderBlockedUntil) > new Date() ? (
                       <span className="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
                         Blocked
@@ -216,7 +215,7 @@ export default function AdminCustomers() {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                     <button
                       onClick={() => handleCustomerClick(customer.id)}
                       className="text-button hover:text-button-200 font-semibold transition-colors"
@@ -228,6 +227,7 @@ export default function AdminCustomers() {
               ))}
             </tbody>
           </table>
+          </div>
           {customers.length === 0 && !loading && (
             <div className="text-center py-12 text-foreground/60">
               No customers found
@@ -242,6 +242,8 @@ export default function AdminCustomers() {
           totalCount={pagination.totalCount}
           totalPages={pagination.totalPages}
           onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          itemLabel="customers"
         />
 
         {/* Customer Detail Modal */}

@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Layout } from '@/components/Layout';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { ProductCard } from '@/components/ProductCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { productService, Product } from '@/services/productService';
-import { useCart } from '@/context/CartContext';
 import { notificationService } from '@/services/notificationService';
 
 export default function Collections() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCollection, setSelectedCollection] = useState<string>('all');
-  const { addItem } = useCart();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -37,21 +34,6 @@ export default function Collections() {
 
     fetchProducts();
   }, [selectedCollection]);
-
-  const handleAddToCart = async (product: Product) => {
-    try {
-      await addItem({
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.imageUrl,
-      });
-      notificationService.success(`${product.name} added to cart!`);
-    } catch (error) {
-      // Error already handled in CartContext
-    }
-  };
 
   // Get unique categories as collections - fetch all products once to get categories
   const [allCategories, setAllCategories] = useState<string[]>([]);
@@ -92,64 +74,48 @@ export default function Collections() {
         }}
       />
       <Layout>
-      <div className="bg-primary py-20 relative overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 opacity-30" style={{
-          background: 'radial-gradient(ellipse at center, rgba(220, 38, 38, 0.1) 0%, transparent 70%)'
-        }} />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-            Collections
-          </h1>
-          <p className="text-xl text-foreground/80">
-            Explore our curated collections of handcrafted treasures
-          </p>
-        </div>
-      </div>
-
-      <section className="py-12 bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Collection Filter */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {collections.map((collection) => (
-              <button
-                key={collection}
-                onClick={() => setSelectedCollection(collection)}
-                className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
-                  selectedCollection === collection
-                    ? 'bg-button text-button-text shadow-lg transform scale-105'
-                    : 'bg-primary/60 text-foreground hover:bg-primary'
-                }`}
-              >
-                {collection.charAt(0).toUpperCase() + collection.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* Products Grid */}
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <LoadingSpinner size="lg" />
+        <section className="bg-primary pb-8 overflow-x-hidden">
+          <div className="page-shell pt-4">
+            <div className="mb-4 border-b border-foreground/10 pb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                <span className="text-red-500">Collections</span>
+              </h1>
             </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-xl text-foreground/70">No products found in this collection.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredProducts.map((product) => (
-                <Link key={product.id} href={`/product/${product.id}`}>
-                  <ProductCard
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                  />
-                </Link>
+
+            <div className="flex flex-wrap gap-2 sm:gap-3 mb-6">
+              {collections.map((collection) => (
+                <button
+                  key={collection}
+                  onClick={() => setSelectedCollection(collection)}
+                  className={`px-4 py-1.5 sm:px-5 sm:py-2 rounded-full text-sm font-semibold transition-all duration-200 touch-manipulation ${
+                    selectedCollection === collection
+                      ? 'bg-button text-button-text shadow-md'
+                      : 'bg-primary/60 text-foreground hover:bg-primary border border-foreground/10'
+                  }`}
+                >
+                  {collection.charAt(0).toUpperCase() + collection.slice(1)}
+                </button>
               ))}
             </div>
-          )}
-        </div>
-      </section>
-    </Layout>
+
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-foreground/70">No products found in this collection.</p>
+              </div>
+            ) : (
+              <div className="grid grid-auto-fill-lg gap-6 sm:gap-8 items-stretch [&>*]:min-w-0">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </Layout>
     </>
   );
 }

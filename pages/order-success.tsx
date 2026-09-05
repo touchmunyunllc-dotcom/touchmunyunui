@@ -8,8 +8,10 @@ import { stripeService } from '@/services/stripeService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import Image from 'next/image';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 import Link from 'next/link';
 import { SEO } from '@/components/SEO';
+import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -184,14 +186,14 @@ export default function OrderSuccess() {
                 />
               </svg>
             </div>
-            <h1 className="text-4xl font-bold text-primary-500 mb-2">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
               Order Placed Successfully!
             </h1>
-            <p className="text-lg text-gray-400">
+            <p className="text-lg text-foreground/70">
               Thank you for your purchase. We&apos;ve received your order and will process it shortly.
             </p>
             {order && (
-              <p className="text-xl font-semibold text-primary-600 mt-4">
+              <p className="text-xl font-semibold text-foreground mt-4">
                 Order #{order.orderCode || order.id.slice(0, 8)}
               </p>
             )}
@@ -214,6 +216,7 @@ export default function OrderSuccess() {
                           src={item.product.imageUrl}
                           alt={item.product.name}
                           fill
+                          sizes={IMAGE_SIZES.cartThumb}
                           className="object-cover"
                         />
                       ) : (
@@ -282,6 +285,16 @@ export default function OrderSuccess() {
                   confirmation shortly. We&apos;ll notify you when your order is shipped.
                 </p>
               </div>
+
+              <CustomizationPolicyNotice
+                variant="boxed"
+                className="mt-4"
+                items={(order.orderItems ?? []).map((item) => ({
+                  customNumber: item.customNumber,
+                  writingColor: item.writingColor,
+                  customizationPolicy: item.product?.customizationPolicy,
+                }))}
+              />
             </div>
           )}
 

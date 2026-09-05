@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -13,6 +14,8 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '@/components/StripePaymentForm';
 import { SEO } from '@/components/SEO';
+import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
+import { ADMIN_SHOPPING_BLOCKED_MESSAGE, isAdminUser } from '@/lib/adminShopping';
 
 export default function Checkout() {
   const { isAuthenticated, user } = useAuth();
@@ -61,6 +64,12 @@ export default function Checkout() {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
+      return;
+    }
+
+    if (isAdminUser(user)) {
+      notificationService.error(ADMIN_SHOPPING_BLOCKED_MESSAGE);
+      router.push('/admin');
       return;
     }
 
@@ -286,6 +295,7 @@ export default function Checkout() {
                         src={item.image || '/placeholder.png'}
                         alt={item.name}
                         fill
+                        sizes={IMAGE_SIZES.cartThumb}
                         className="object-cover"
                       />
                     </div>
@@ -617,6 +627,7 @@ export default function Checkout() {
                     <span>${finalTotal.toFixed(2)}</span>
                   </div>
                 </div>
+                <CustomizationPolicyNotice items={items} className="pt-3" />
               </div>
 
               {/* Payment Method Selection */}

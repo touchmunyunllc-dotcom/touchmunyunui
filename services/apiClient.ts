@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { getApiBaseUrl } from './apiBaseUrl';
 import { tokenStorage } from './tokenStorage';
+import { getApiErrorMessage } from '@/lib/apiError';
+
+const DEBUG_API = process.env.NEXT_PUBLIC_DEBUG_API === 'true';
 
 const apiClient = axios.create({
   // Browser: same-origin /api (Next rewrite). SSR: absolute Render URL.
@@ -18,8 +21,8 @@ apiClient.interceptors.request.use(
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     }
-    if (process.env.NODE_ENV === 'development') {
-      console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
+    if (DEBUG_API) {
+      console.debug('API Request:', config.method?.toUpperCase(), config.url);
     }
     return config;
   },
@@ -31,26 +34,21 @@ apiClient.interceptors.request.use(
 
 // Response interceptor to handle errors
 apiClient.interceptors.response.use(
-  (response) => {
-    // Log response for debugging (remove in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('API Response:', response.status, response.config.url);
-    }
-    return response;
-  },
+  (response) => response,
   (error) => {
+    const userMessage = getApiErrorMessage(error);
+    (error as Error & { userMessage?: string }).userMessage = userMessage;
+
     const url = String(error.config?.url ?? '');
     const isExpectedAuth401 =
       error.response?.status === 401 &&
       (url.includes('/auth/me') || url.includes('/auth/login') || url.includes('/auth/register'));
 
-    if (!isExpectedAuth401) {
-      console.error('API Error:', {
+    if (!isExpectedAuth401 && DEBUG_API) {
+      console.debug('API Error:', {
         url: error.config?.url,
-        method: error.config?.method,
         status: error.response?.status,
-        message: error.message,
-        data: error.response?.data
+        message: userMessage,
       });
     }
 

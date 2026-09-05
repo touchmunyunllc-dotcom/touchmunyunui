@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { SEO } from '@/components/SEO';
 import { useCart } from '@/context/CartContext';
@@ -6,16 +6,28 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { notificationService } from '@/services/notificationService';
 import { EmptyState } from '@/components/EmptyState';
+import { CartLineCustomizationTags } from '@/components/CartLineCustomizationTags';
+import { getCartLineOptions, dedupeGuestCartLines } from '@/services/productCustomizationService';
+import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
+import { CouponSlider } from '@/components/CouponSlider';
+import { ADMIN_SHOPPING_BLOCKED_MESSAGE, isAdminUser } from '@/lib/adminShopping';
 import Link from 'next/link';
 
 export default function Cart() {
-  const { items, updateQuantity, removeItem, subtotal, tax, discount, total, clearCart, itemCount } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { items, updateQuantity, removeItem, subtotal, tax, discount, total, clearCart } = useCart();
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const adminShoppingBlocked = isAuthenticated && isAdminUser(user);
+  const cartLines = useMemo(() => dedupeGuestCartLines(items), [items]);
+  const lineCount = cartLines.length;
 
   const handleCheckout = () => {
-    if (items.length === 0) {
+    if (adminShoppingBlocked) {
+      notificationService.error(ADMIN_SHOPPING_BLOCKED_MESSAGE);
+      return;
+    }
+    if (cartLines.length === 0) {
       notificationService.error('Cart is empty');
       return;
     }
@@ -28,7 +40,7 @@ export default function Cart() {
     router.push('/checkout');
   };
 
-  if (items.length === 0) {
+  if (cartLines.length === 0) {
     return (
       <>
       <SEO title="Shopping Cart - Touch Munyun" noindex nofollow />
@@ -60,7 +72,7 @@ export default function Cart() {
           <div className="mb-8">
             <h1 className="text-5xl font-bold text-foreground mb-2">Shopping Cart</h1>
             <p className="text-xl text-foreground/80">
-              {itemCount} {itemCount === 1 ? 'item' : 'items'} in your cart
+              {lineCount} {lineCount === 1 ? 'item' : 'items'} in your cart
             </p>
           </div>
 
@@ -78,7 +90,7 @@ export default function Cart() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {items.map((item) => (
+                  {cartLines.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-4 p-4 rounded-xl border border-foreground/20 hover:border-button hover:shadow-md transition-all duration-200 bg-primary/60"
@@ -92,30 +104,7 @@ export default function Cart() {
                         <h3 className="text-lg font-bold text-foreground mb-1">
                           {item.name}
                         </h3>
-                        {(item.selectedColor || item.selectedSize || item.customNumber || item.writingColor) && (
-                          <div className="flex flex-wrap gap-2 mb-1">
-                            {item.selectedColor && (
-                              <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
-                                Color: {item.selectedColor}
-                              </span>
-                            )}
-                            {item.selectedSize && (
-                              <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
-                                Size: {item.selectedSize}
-                              </span>
-                            )}
-                            {item.customNumber && (
-                              <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
-                                Number: {item.customNumber}
-                              </span>
-                            )}
-                            {item.writingColor && (
-                              <span className="text-xs px-2 py-0.5 bg-button/10 text-button border border-button/20 rounded-md">
-                                Writing: {item.writingColor}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        <CartLineCustomizationTags line={item} />
                         <p className="text-foreground/70 mb-2">
                           ${item.price.toFixed(2)} each
                         </p>
@@ -123,13 +112,7 @@ export default function Cart() {
                           <div className="flex items-center border border-foreground/20 rounded-lg">
                             <button
                               onClick={() =>
-                                updateQuantity(item.productId, item.quantity - 1, {
-                                  selectedColor: item.selectedColor,
-                                  selectedSize: item.selectedSize,
-                                  customNumber: item.customNumber,
-                                  writingColor: item.writingColor,
-                                  cartLineId: item.id,
-                                })
+                                updateQuantity(item.productId, item.quantity - 1, getCartLineOptions(item))
                               }
                               className="px-3 py-1 hover:bg-primary transition-colors rounded-l-lg text-foreground"
                             >
@@ -156,13 +139,7 @@ export default function Cart() {
                                 if (item.quantity >= MAX_QUANTITY) {
                                   notificationService.error(`Maximum quantity allowed per product is ${MAX_QUANTITY}`);
                                 } else {
-                                  updateQuantity(item.productId, item.quantity + 1, {
-                                    selectedColor: item.selectedColor,
-                                    selectedSize: item.selectedSize,
-                                    customNumber: item.customNumber,
-                                    writingColor: item.writingColor,
-                                    cartLineId: item.id,
-                                  });
+                                  updateQuantity(item.productId, item.quantity + 1, getCartLineOptions(item));
                                 }
                               }}
                               disabled={item.quantity >= 10}
@@ -184,15 +161,7 @@ export default function Cart() {
                             </button>
                           </div>
                           <button
-                            onClick={() =>
-                              removeItem(item.productId, {
-                                selectedColor: item.selectedColor,
-                                selectedSize: item.selectedSize,
-                                customNumber: item.customNumber,
-                                writingColor: item.writingColor,
-                                cartLineId: item.id,
-                              })
-                            }
+                            onClick={() => removeItem(item.productId, getCartLineOptions(item))}
                             className="text-foreground/70 hover:text-foreground font-medium text-sm transition-colors"
                           >
                             Remove
@@ -214,7 +183,8 @@ export default function Cart() {
             <div className="lg:col-span-1">
               <div className="bg-primary/80 rounded-2xl shadow-xl p-6 sticky top-24 border border-foreground/20">
                 <h2 className="text-2xl font-bold text-foreground mb-6">Order Summary</h2>
-                <div className="space-y-4 mb-6">
+                <CouponSlider variant="compact" />
+                <div className="space-y-4 mb-6 mt-4">
                   <div className="flex justify-between text-foreground/70">
                     <span>Subtotal</span>
                     <span className="font-semibold text-foreground">${subtotal.toFixed(2)}</span>
@@ -239,10 +209,16 @@ export default function Cart() {
                       ${total.toFixed(2)}
                     </span>
                   </div>
+                  <CustomizationPolicyNotice items={cartLines} className="pt-2" />
                 </div>
+                {adminShoppingBlocked && (
+                  <div className="mb-4 p-4 rounded-xl border border-gold-500/30 bg-gold-500/10 text-sm text-foreground/80">
+                    {ADMIN_SHOPPING_BLOCKED_MESSAGE}
+                  </div>
+                )}
                 <button
                   onClick={handleCheckout}
-                  disabled={loading}
+                  disabled={loading || adminShoppingBlocked}
                   className="w-full bg-button text-button-text font-semibold py-4 rounded-xl hover:bg-button-200 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4"
                 >
                   {loading ? (

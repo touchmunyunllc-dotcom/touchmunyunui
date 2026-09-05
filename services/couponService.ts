@@ -21,12 +21,68 @@ export interface CouponValidation {
   discountType: string;
 }
 
+type CouponApiRecord = Partial<Coupon> & {
+  Id?: string;
+  Code?: string;
+  DiscountType?: Coupon['discountType'] | string;
+  DiscountValue?: number;
+  ExpiryDate?: string;
+  UsageLimit?: number;
+  UsageCount?: number;
+  IsActive?: boolean;
+  MinPurchaseAmount?: number;
+  MaxDiscountAmount?: number;
+  CreatedAt?: string;
+};
+
+/** Map API payload (camelCase or PascalCase) to storefront Coupon shape. */
+export function normalizeCoupon(raw: CouponApiRecord): Coupon | null {
+  const code = String(raw.code ?? raw.Code ?? '').trim();
+  if (!code) return null;
+
+  const discountTypeRaw = String(raw.discountType ?? raw.DiscountType ?? 'Percentage');
+  const discountType: Coupon['discountType'] =
+    discountTypeRaw.toLowerCase() === 'fixedamount' ? 'FixedAmount' : 'Percentage';
+
+  return {
+    id: String(raw.id ?? raw.Id ?? code),
+    code,
+    discountType,
+    discountValue: Number(raw.discountValue ?? raw.DiscountValue ?? 0),
+    expiryDate: raw.expiryDate ?? raw.ExpiryDate,
+    usageLimit: raw.usageLimit ?? raw.UsageLimit,
+    usageCount: raw.usageCount ?? raw.UsageCount,
+    isActive: raw.isActive ?? raw.IsActive ?? true,
+    minPurchaseAmount: Number(raw.minPurchaseAmount ?? raw.MinPurchaseAmount ?? 0),
+    maxDiscountAmount: raw.maxDiscountAmount ?? raw.MaxDiscountAmount,
+    createdAt: String(raw.createdAt ?? raw.CreatedAt ?? new Date().toISOString()),
+  };
+}
+
+/** Active, non-expired coupons for marketing UI — sourced from Admin → Coupons (GET /coupons/promo). */
+export async function fetchPromoCoupons(): Promise<Coupon[]> {
+  const response = await apiClient.get<CouponApiRecord[]>('/coupons/promo');
+  const rows = Array.isArray(response.data) ? response.data : [];
+
+  return rows
+    .map((row) => normalizeCoupon(row))
+    .filter((coupon): coupon is Coupon => {
+      if (!coupon || !coupon.isActive) return false;
+      if (coupon.expiryDate && new Date(coupon.expiryDate) <= new Date()) return false;
+      if (
+        coupon.usageLimit != null &&
+        coupon.usageCount != null &&
+        coupon.usageCount >= coupon.usageLimit
+      ) {
+        return false;
+      }
+      return true;
+    });
+}
+
 export const couponService = {
-  /** Public marketing list (homepage ticker, etc.) — uses GET /coupons/promo */
-  async getPromo(): Promise<Coupon[]> {
-    const response = await apiClient.get<Coupon[]>('/coupons/promo');
-    return Array.isArray(response.data) ? response.data : [];
-  },
+  /** Public marketing list (homepage hero, cart) — Admin → Coupons only; no static fallback. */
+  getPromo: fetchPromoCoupons,
 
   async getAll(options?: { page?: number; pageSize?: number }): Promise<Coupon[] | { coupons: Coupon[]; totalCount: number; page: number; pageSize: number; totalPages: number }> {
     const response = await apiClient.get<any>('/coupons', {

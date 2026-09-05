@@ -66,12 +66,12 @@ export const analyticsService = {
     const data = response.data;
     
     return {
-      totalOrders: data.totalOrders || data.TotalOrders || 0,
-      completedOrders: data.completedOrders || data.CompletedOrders || 0,
-      pendingOrders: data.pendingOrders || data.PendingOrders || 0,
-      totalRevenue: data.totalRevenue || data.TotalRevenue || 0,
-      averageOrderValue: data.averageOrderValue || data.AverageOrderValue || 0,
-      totalCustomers: data.totalCustomers || data.TotalCustomers || 0,
+      totalOrders: Number(data.totalOrders ?? data.TotalOrders ?? 0),
+      completedOrders: Number(data.completedOrders ?? data.CompletedOrders ?? 0),
+      pendingOrders: Number(data.pendingOrders ?? data.PendingOrders ?? 0),
+      totalRevenue: Number(data.totalRevenue ?? data.TotalRevenue ?? 0),
+      averageOrderValue: Number(data.averageOrderValue ?? data.AverageOrderValue ?? 0),
+      totalCustomers: Number(data.totalCustomers ?? data.TotalCustomers ?? 0),
       period: data.period || data.Period || { startDate: '', endDate: '' },
     };
   },

@@ -59,7 +59,18 @@ export function ColorMultiSelect({
   optional = true,
 }: ColorMultiSelectProps) {
   const [open, setOpen] = useState(false);
+  const [customName, setCustomName] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const hexFor = (name: string) =>
+    PRODUCT_COLOR_OPTIONS.find((o) => o.name === name)?.hex ?? '#6B7280';
+
+  const addCustomColor = () => {
+    const name = customName.trim();
+    if (!name || selected.includes(name)) return;
+    onChange([...selected, name]);
+    setCustomName('');
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -155,8 +166,39 @@ export function ColorMultiSelect({
               </label>
             );
           })}
+          <div className="p-3 border-t border-foreground/10 flex gap-2">
+            <input
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomColor())}
+              placeholder="Custom color name"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-foreground/20 bg-primary/60 text-white"
+            />
+            <button
+              type="button"
+              onClick={addCustomColor}
+              className="px-3 py-2 text-sm rounded-lg bg-button text-button-text font-medium"
+            >
+              Add
+            </button>
+          </div>
         </div>
       )}
+
+      <div className="flex gap-2 mt-3">
+        <input
+          type="text"
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomColor())}
+          placeholder="Or type a custom color and press Enter"
+          className="flex-1 px-4 py-2 text-sm rounded-xl border border-foreground/20 bg-primary/40 text-white"
+        />
+        <button type="button" onClick={addCustomColor} className="px-4 py-2 rounded-xl bg-button text-button-text text-sm font-medium">
+          Add color
+        </button>
+      </div>
 
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3">
@@ -165,6 +207,11 @@ export function ColorMultiSelect({
               key={color}
               className="inline-flex items-center gap-1 px-3 py-1.5 bg-button/20 text-button border border-button/30 rounded-lg text-sm font-medium"
             >
+              <span
+                className="w-3 h-3 rounded-full border border-foreground/30 shrink-0"
+                style={{ backgroundColor: hexFor(color) }}
+                aria-hidden
+              />
               {color}
               <button
                 type="button"

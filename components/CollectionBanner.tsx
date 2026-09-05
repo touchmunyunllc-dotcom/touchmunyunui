@@ -9,10 +9,10 @@ interface Collection {
 }
 
 const collections: Collection[] = [
-  { id: '1', title: 'SHOP THE SUMMER COLLECTION', link: '/collections' },
-  { id: '2', title: 'NEW ARRIVALS NOW AVAILABLE', link: '/new-arrivals' },
-  { id: '3', title: 'BEST SELLERS - LIMITED TIME', link: '/best-sellers' },
-  { id: '4', title: 'FIRST TIME PURCHASE 10% OFF COUPON', link: '/register' },
+  { id: '1', title: 'Shop the summer collection', link: '/collections' },
+  { id: '2', title: 'New arrivals now available', link: '/new-arrivals' },
+  { id: '3', title: 'Best sellers — limited time', link: '/best-sellers' },
+  { id: '4', title: 'First purchase 10% off', link: '/register' },
 ];
 
 export const CollectionBanner: React.FC = () => {
@@ -25,8 +25,8 @@ export const CollectionBanner: React.FC = () => {
       setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % collections.length);
         setIsVisible(true);
-      }, 300); // Half of transition duration
-    }, 4000); // Change every 4 seconds
+      }, 250);
+    }, 4500);
 
     return () => clearInterval(interval);
   }, []);
@@ -34,62 +34,52 @@ export const CollectionBanner: React.FC = () => {
   const currentCollection = collections[currentIndex];
   const collectionColors = getCollectionColor(currentCollection.title);
 
-  const BannerContent = () => (
-    <div className="relative w-full h-16 sm:h-20 flex items-center justify-center overflow-hidden">
-      {/* Context-based gradient background */}
-      <div className={`absolute inset-0 bg-gradient-to-r ${collectionColors.gradient} opacity-5`} />
-      
-      {/* Subtle gradient overlays on sides */}
-      <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-account-menu via-account-menu/80 to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-account-menu via-account-menu/80 to-transparent z-10 pointer-events-none" />
-      
-      {/* Central text with context color */}
-      <div className={`relative z-0 transition-opacity duration-[600ms] ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-        {currentCollection.link ? (
-          <Link
-            href={currentCollection.link}
-            className={`${collectionColors.text} hover:opacity-80 transition-all duration-300 text-xl sm:text-2xl md:text-3xl font-bold tracking-[0.15em] uppercase letter-spacing-wide drop-shadow-lg`}
-          >
-            {currentCollection.title}
-          </Link>
-        ) : (
-          <span className={`${collectionColors.text} text-xl sm:text-2xl md:text-3xl font-bold tracking-[0.15em] uppercase letter-spacing-wide drop-shadow-lg`}>
-            {currentCollection.title}
-          </span>
-        )}
-      </div>
+  return (
+    <div className="border-b border-white/10 bg-account-menu/95 backdrop-blur-sm">
+      <div className="page-shell relative flex h-11 sm:h-12 items-center justify-center">
+        <div
+          className={`transition-all duration-300 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+          }`}
+        >
+          {currentCollection.link ? (
+            <Link
+              href={currentCollection.link}
+              className={`${collectionColors.text} text-xs sm:text-sm font-semibold tracking-[0.12em] uppercase hover:opacity-90 transition-opacity`}
+            >
+              {currentCollection.title}
+            </Link>
+          ) : (
+            <span
+              className={`${collectionColors.text} text-xs sm:text-sm font-semibold tracking-[0.12em] uppercase`}
+            >
+              {currentCollection.title}
+            </span>
+          )}
+        </div>
 
-      {/* Premium Navigation dots with context color */}
-      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
-        {collections.map((_, index) => {
-          const dotColors = getCollectionColor(collections[index].title);
-          return (
+        <div className="absolute right-0 flex gap-1">
+          {collections.map((_, index) => (
             <button
               key={index}
+              type="button"
               onClick={() => {
                 setIsVisible(false);
                 setTimeout(() => {
                   setCurrentIndex(index);
                   setIsVisible(true);
-                }, 300);
+                }, 200);
               }}
-              className={`rounded-full transition-all duration-300 ${
+              className={`rounded-full transition-all ${
                 index === currentIndex
-                  ? `${dotColors.bg} border ${dotColors.border} w-4 h-1.5 shadow-lg`
-                  : 'bg-foreground/30 hover:bg-foreground/50 w-1.5 h-1.5'
+                  ? `w-4 h-1 ${collectionColors.bg}`
+                  : 'w-1 h-1 bg-white/25 hover:bg-white/40'
               }`}
-              aria-label={`Go to collection ${index + 1}`}
+              aria-label={`Announcement ${index + 1}`}
             />
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   );
-
-  return (
-    <div className="bg-account-menu border-b border-foreground/10">
-      <BannerContent />
-    </div>
-  );
 };
-

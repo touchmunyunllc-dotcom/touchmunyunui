@@ -28,7 +28,7 @@ export default function Offline() {
               </svg>
             </div>
 
-            <h1 className="text-4xl font-bold text-primary-500 mb-4">
+            <h1 className="text-4xl font-bold text-foreground mb-4">
               You&apos;re Offline
             </h1>
             <p className="text-xl text-gray-400 mb-8">
@@ -45,7 +45,7 @@ export default function Offline() {
               </button>
               <Link
                 href="/"
-                className="block w-full text-center text-gray-400 hover:text-primary-500 font-medium py-3"
+                className="block w-full text-center text-gray-400 hover:text-button font-medium py-3"
               >
                 Go to Homepage
               </Link>

@@ -8,9 +8,11 @@ import { imageService } from '@/services/imageService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Pagination } from '@/components/Pagination';
+import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
 
 export default function AdminSlideshow() {
   const router = useRouter();
+  const dashboardReturnTab = getAdminReturnTab('actions');
   const { user, isAuthenticated } = useAuth();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,13 +215,13 @@ export default function AdminSlideshow() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-primary min-h-screen">
         <div className="mb-4">
           <Link
-            href="/admin"
+            href={adminDashboardHref(dashboardReturnTab)}
             className="inline-flex items-center text-button hover:text-button-200 font-medium transition-colors"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Dashboard
+            {getAdminBackLabel(dashboardReturnTab)}
           </Link>
         </div>
         <div className="flex justify-between items-center mb-8">

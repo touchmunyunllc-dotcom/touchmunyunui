@@ -107,7 +107,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                             value={reason}
                             checked={selectedReason === reason}
                             onChange={(e) => setSelectedReason(e.target.value)}
-                            className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                            className="w-4 h-4 text-button focus:ring-button"
                             disabled={loading}
                           />
                           <span className="ml-3 text-sm text-gray-700">{reason}</span>

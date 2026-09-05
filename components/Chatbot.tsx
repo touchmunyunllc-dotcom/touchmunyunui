@@ -133,12 +133,12 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: 'How do I apply a coupon code?',
-        answer: 'During checkout, enter your coupon code in the "Coupon Code" field and click "Apply". Valid codes will show the discount applied to your order total. Check our header banner for active coupon codes!',
+        answer: 'During checkout, enter your coupon code in the "Coupon Code" field and click "Apply". Valid codes will show the discount applied to your order total. Active promo codes are shown on the homepage hero and in your cart — they come from our current Admin coupons.',
         keywords: ['coupon', 'discount', 'promo code', 'voucher', 'code', 'apply coupon']
       },
       {
         question: 'Do you offer first-time customer discounts?',
-        answer: 'Yes! First-time customers can use the "WELCOME10" coupon code for 10% off their first purchase. Check the coupon slider at the top of the page for current offers.',
+        answer: 'We run promotions from time to time. Check the homepage hero or cart page for active promo codes — those are loaded live from Admin → Coupons. Enter any valid code at checkout to apply the discount.',
         keywords: ['first time', 'welcome', 'new customer', 'discount', 'first purchase']
       },
       {

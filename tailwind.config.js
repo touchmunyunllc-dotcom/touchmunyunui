@@ -10,6 +10,8 @@ module.exports = {
       colors: {
         primary: {
           // Pure black background - icons.com style
+          // NOTE: Do not use text-primary-* for text on dark backgrounds (all shades are black).
+          // Use text-foreground, text-button, or text-white instead.
           DEFAULT: '#000000',
           50: '#1a1a1a',
           100: '#0d0d0d',

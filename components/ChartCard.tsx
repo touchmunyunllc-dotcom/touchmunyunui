@@ -1,6 +1,23 @@
 import React from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+const SERIES_LABELS: Record<string, string> = {
+  totalRevenue: 'Total Revenue',
+  totalOrders: 'Total Orders',
+  completedOrders: 'Completed Orders',
+  averageOrderValue: 'Avg Order Value',
+  totalCustomers: 'Total Customers',
+};
+
+function getSeriesLabel(dataKey: string, override?: string): string {
+  if (override) return override;
+  if (SERIES_LABELS[dataKey]) return SERIES_LABELS[dataKey];
+  return dataKey
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (char) => char.toUpperCase())
+    .trim();
+}
+
 interface ChartCardProps {
   title: string;
   data: Array<{
@@ -9,8 +26,11 @@ interface ChartCardProps {
   }>;
   dataKey: string;
   color: string;
+  accentGradient?: string;
+  seriesName?: string;
   type?: 'line' | 'bar';
   formatValue?: (value: number) => string;
+  showTitle?: boolean;
 }
 
 export const ChartCard: React.FC<ChartCardProps> = ({
@@ -18,9 +38,13 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   data,
   dataKey,
   color,
+  accentGradient = 'from-transparent via-button to-transparent',
+  seriesName,
   type = 'line',
   formatValue,
+  showTitle = true,
 }) => {
+  const label = getSeriesLabel(dataKey, seriesName);
   const formatDate = (dateStr: string) => {
     try {
       if (!dateStr) return '';
@@ -37,15 +61,12 @@ export const ChartCard: React.FC<ChartCardProps> = ({
 
   return (
     <div className="group relative bg-primary/80 backdrop-blur-xl rounded-3xl shadow-glass-lg p-6 md:p-8 border border-foreground/10 hover:border-foreground/30 transition-all duration-500 overflow-hidden">
-      {/* Premium gradient accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-button to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      {/* Subtle glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
-      
-      <h3 className="text-xl md:text-2xl font-bold text-foreground mb-6 group-hover:text-button transition-colors duration-300">
-        {title}
-      </h3>
+      <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${accentGradient} opacity-90 group-hover:opacity-100 transition-opacity duration-500`} />
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"
+        style={{ background: `linear-gradient(to bottom right, ${color}22, transparent)` }}
+      />
+      {showTitle && <h3 className="text-xl md:text-2xl font-bold text-foreground mb-6">{title}</h3>}
       <ResponsiveContainer width="100%" height={300}>
         <ChartComponent data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(233, 239, 241, 0.1)" />
@@ -61,8 +82,11 @@ export const ChartCard: React.FC<ChartCardProps> = ({
             tickFormatter={formatValue || ((val) => val.toString())}
           />
           <Tooltip 
-            formatter={(value: any) => formatValue ? formatValue(value) : value}
-            labelFormatter={(label) => `Date: ${formatDate(label)}`}
+            formatter={(value: number | string) => [
+              formatValue && typeof value === 'number' ? formatValue(value) : value,
+              label,
+            ]}
+            labelFormatter={(tooltipLabel) => `Date: ${formatDate(String(tooltipLabel))}`}
             contentStyle={{ 
               backgroundColor: 'rgba(18, 18, 20, 0.95)', 
               border: '1px solid rgba(233, 239, 241, 0.2)',
@@ -78,12 +102,13 @@ export const ChartCard: React.FC<ChartCardProps> = ({
           />
           <DataComponent 
             type={type === 'bar' ? 'monotone' : undefined}
-            dataKey={dataKey} 
+            dataKey={dataKey}
+            name={label}
             stroke={color} 
             fill={type === 'bar' ? color : undefined}
             strokeWidth={3}
             dot={{ fill: color, r: 5, strokeWidth: 2, stroke: 'rgba(18, 18, 20, 0.8)' }}
-            activeDot={{ r: 8, stroke: color, strokeWidth: 2 }}
+            activeDot={{ r: 8, stroke: color, strokeWidth: 2, fill: color }}
           />
         </ChartComponent>
       </ResponsiveContainer>
