@@ -33,7 +33,7 @@ export function isNoSurchargeColor(product: PricedProduct, color?: string | null
 }
 
 export function getColorSurcharge(product: PricedProduct, selectedColor?: string | null): number {
-  if (!isWristbandProduct(product) || !product.colorSurcharge || product.colorSurcharge <= 0) {
+  if (!product.colorSurcharge || product.colorSurcharge <= 0 || !selectedColor) {
     return 0;
   }
   return isNoSurchargeColor(product, selectedColor) ? 0 : product.colorSurcharge;

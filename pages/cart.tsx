@@ -93,23 +93,28 @@ export default function Cart() {
                   {cartLines.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border border-foreground/20 hover:border-button hover:shadow-md transition-all duration-200 bg-primary/60"
+                      className="flex gap-3 sm:gap-4 p-4 rounded-xl border border-foreground/20 hover:border-button hover:shadow-md transition-all duration-200 bg-primary/60 min-w-0 overflow-hidden"
                     >
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-24 h-24 object-cover rounded-xl"
+                        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl shrink-0"
                       />
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-foreground mb-1">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 break-words">
                           {item.name}
                         </h3>
                         <CartLineCustomizationTags line={item} />
-                        <p className="text-foreground/70 mb-2">
-                          ${item.price.toFixed(2)} each
-                        </p>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center border border-foreground/20 rounded-lg">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-2">
+                          <p className="text-foreground/70 text-sm sm:text-base">
+                            ${item.price.toFixed(2)} each
+                          </p>
+                          <p className="text-lg sm:text-2xl font-bold text-button tabular-nums shrink-0">
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex items-center border border-foreground/20 rounded-lg shrink-0">
                             <button
                               onClick={() =>
                                 updateQuantity(item.productId, item.quantity - 1, getCartLineOptions(item))
@@ -167,11 +172,6 @@ export default function Cart() {
                             Remove
                           </button>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-button">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </p>
                       </div>
                     </div>
                   ))}

@@ -286,21 +286,10 @@ export default function ProductView() {
                 <div>
                   <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 break-words">{product.name}</h1>
                   <div className="mb-4">
-                    {isWristband ? (
-                      <div>
-                        <span className="text-2xl font-semibold text-red-500">
-                          ${displayUnitPrice.toFixed(2)}
-                        </span>
-                        {selectedColor && colorSurchargeAmount > 0 && (
-                          <p className="text-sm text-white/60 mt-1">
-                            Includes ${colorSurchargeAmount.toFixed(2)} color band fee
-                          </p>
-                        )}
-                      </div>
-                    ) : product.salePrice ? (
+                    {product.salePrice && !isWristband ? (
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="text-2xl font-semibold text-red-500">
-                          ${product.salePrice.toFixed(2)}
+                          ${displayUnitPrice.toFixed(2)}
                         </span>
                         <span className="text-lg text-white/50 line-through">
                           ${product.price.toFixed(2)}
@@ -308,11 +297,24 @@ export default function ProductView() {
                         <span className="px-2 py-0.5 bg-red-600/20 text-red-400 border border-red-600/30 rounded-md text-sm font-semibold">
                           {Math.round(((product.price - product.salePrice) / product.price) * 100)}% OFF
                         </span>
+                        {colorSurchargeAmount > 0 && (
+                          <p className="w-full text-sm text-white/60">
+                            Includes ${colorSurchargeAmount.toFixed(2)} color fee
+                          </p>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-2xl font-semibold text-red-500">
-                        ${product.price.toFixed(2)}
-                      </span>
+                      <div>
+                        <span className="text-2xl font-semibold text-red-500">
+                          ${displayUnitPrice.toFixed(2)}
+                        </span>
+                        {colorSurchargeAmount > 0 && (
+                          <p className="text-sm text-white/60 mt-1">
+                            Includes ${colorSurchargeAmount.toFixed(2)} color
+                            {isWristband ? ' band' : ''} fee
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -338,16 +340,29 @@ export default function ProductView() {
                 </div>
 
                 {hasColors && !isWristband && (
-                  <StorefrontColorSelect
-                    colors={product.colors}
-                    value={selectedColor}
-                    onChange={setSelectedColor}
-                    hint={
-                      product.colorImages && Object.keys(product.colorImages).length > 0
-                        ? 'Photo updates to match your color choice.'
-                        : 'Choose from all available shirt colors.'
-                    }
-                  />
+                  <div className="space-y-2">
+                    <StorefrontColorSelect
+                      colors={product.colors}
+                      value={selectedColor}
+                      onChange={setSelectedColor}
+                      hint={
+                        product.colorImages && Object.keys(product.colorImages).length > 0
+                          ? 'Photo updates to match your color choice.'
+                          : 'Choose from available colors.'
+                      }
+                    />
+                    {(product.colorSurcharge ?? 0) > 0 && (
+                      <p className="text-sm text-white/60 leading-relaxed">
+                        {product.noSurchargeColors?.length
+                          ? `${product.noSurchargeColors.join(' and ')} included at base price. `
+                          : ''}
+                        Other colors add ${product.colorSurcharge!.toFixed(2)}
+                        {colorSurchargeAmount > 0
+                          ? ` ($${colorSurchargeAmount.toFixed(2)} reflected in price above).`
+                          : '.'}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {isWristband && (

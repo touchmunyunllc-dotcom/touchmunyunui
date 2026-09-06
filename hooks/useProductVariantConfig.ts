@@ -46,8 +46,6 @@ export function useProductVariantConfig(initial?: Partial<ProductVariantConfigSt
       return {
         ...prev,
         customizationType,
-        colorSurcharge: '',
-        noSurchargeColors: [],
         customizationPolicy: '',
       };
     });

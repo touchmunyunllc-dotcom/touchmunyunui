@@ -3,14 +3,11 @@ import { PRODUCT_COLOR_OPTIONS } from '@/components/ColorMultiSelect';
 export const CUSTOMIZATION_TYPE_WRISTBAND = 'wristband';
 export const WRISTBAND_NUMBER_MAX_LENGTH = 2;
 
-export const WRISTBAND_DEFAULTS = {
-  colorSurcharge: '5',
-  noSurchargeColors: ['Black', 'White'],
-  customizationPolicy:
-    'Black and white wristbands are $25 with about 7–10 days production before shipping. '
-    + 'Color wristbands are an additional $5 ($30 total) with about 10–12 days production before shipping. '
-    + 'Shipping cost applies to all wristbands and is calculated at checkout.',
-};
+/** Suggested copy for Admin → Variants when wristband customization is enabled (saved to DB on product save). */
+export const WRISTBAND_SUGGESTED_POLICY =
+  'Black and white wristbands are $25 with about 7–10 days production before shipping. '
+  + 'Color wristbands are an additional $5 ($30 total) with about 10–12 days production before shipping. '
+  + 'Shipping cost applies to all wristbands and is calculated at checkout.';
 
 export const IMAGE_OBJECT_POSITION_PRESETS: { value: string; label: string }[] = [
   { value: '', label: 'Default (centered)' },
@@ -49,12 +46,7 @@ export function applyWristbandDefaults(state: ProductVariantConfigState): Produc
   return {
     ...state,
     customizationType: CUSTOMIZATION_TYPE_WRISTBAND,
-    colorSurcharge: state.colorSurcharge || WRISTBAND_DEFAULTS.colorSurcharge,
-    noSurchargeColors:
-      state.noSurchargeColors.length > 0
-        ? state.noSurchargeColors
-        : [...WRISTBAND_DEFAULTS.noSurchargeColors],
-    customizationPolicy: state.customizationPolicy.trim() || WRISTBAND_DEFAULTS.customizationPolicy,
+    customizationPolicy: state.customizationPolicy.trim() || WRISTBAND_SUGGESTED_POLICY,
   };
 }
 
@@ -62,7 +54,20 @@ export function validateProductVariantConfig(state: ProductVariantConfigState): 
   if (isWristbandCustomizationType(state.customizationType) && state.colors.length === 0) {
     return 'Wristband products need at least one band color';
   }
+  const surcharge = state.colorSurcharge ? parseFloat(state.colorSurcharge) : 0;
+  if (surcharge > 0 && state.colors.length === 0) {
+    return 'Add at least one color when using a color surcharge';
+  }
+  if (surcharge < 0 || Number.isNaN(surcharge)) {
+    return 'Color surcharge must be a valid amount';
+  }
   return null;
+}
+
+function parseColorSurcharge(value: string): number {
+  if (!value.trim()) return 0;
+  const parsed = parseFloat(value);
+  return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
 }
 
 export function toProductVariantApiPayload(
@@ -76,19 +81,15 @@ export function toProductVariantApiPayload(
     colorImages: state.colorImages,
     customizationType: state.customizationType || emptyCustomizationType,
     imageObjectPosition: state.imageObjectPosition.trim() || (mode === 'update' ? '' : undefined),
+    colorSurcharge: parseColorSurcharge(state.colorSurcharge),
+    noSurchargeColors: state.noSurchargeColors,
   };
 
   if (isWristbandCustomizationType(state.customizationType)) {
-    payload.colorSurcharge = state.colorSurcharge ? parseFloat(state.colorSurcharge) : 0;
-    payload.noSurchargeColors = state.noSurchargeColors;
     payload.customizationPolicy = state.customizationPolicy.trim() || null;
   } else if (mode === 'update') {
-    payload.colorSurcharge = 0;
-    payload.noSurchargeColors = [];
     payload.customizationPolicy = '';
   } else {
-    payload.colorSurcharge = undefined;
-    payload.noSurchargeColors = undefined;
     payload.customizationPolicy = undefined;
   }
 

@@ -5,6 +5,7 @@ import {
   CUSTOMIZATION_TYPE_WRISTBAND,
   IMAGE_OBJECT_POSITION_PRESETS,
   isWristbandCustomizationType,
+  WRISTBAND_SUGGESTED_POLICY,
 } from '@/lib/productCustomization';
 
 type ProductVariantConfigProps = {
@@ -130,44 +131,60 @@ export function ProductVariantConfig({
         </label>
       </div>
 
+      <div className="space-y-4 p-4 border border-foreground/20 rounded-xl bg-primary/40">
+        <div>
+          <h3 className="text-sm font-bold text-white">Color surcharge</h3>
+          <p className="text-xs text-foreground/50 mt-1">
+            Optional extra charge when the customer picks a color not in the included list below.
+            Applies to this product only — set amount per item in Admin.
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-white mb-2">Surcharge amount ($)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={colorSurcharge}
+            onChange={(e) => onColorSurchargeChange(e.target.value)}
+            className="w-full max-w-xs px-4 py-3 border border-foreground/20 rounded-xl bg-primary/60 text-foreground"
+            placeholder="e.g. 3.00 — leave empty for none"
+          />
+          <p className="text-xs text-foreground/50 mt-1">
+            Added when the customer selects a color you did not mark as included below.
+          </p>
+        </div>
+        {colors.length > 0 ? (
+          <div>
+            <label className="block text-sm font-semibold text-white mb-2">
+              Included colors (no surcharge)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {colors.map((color) => (
+                <label
+                  key={color}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-foreground/20 text-sm text-white"
+                >
+                  <input
+                    type="checkbox"
+                    checked={noSurchargeColors.includes(color)}
+                    onChange={(e) => onNoSurchargeColorToggle(color, e.target.checked)}
+                    className="h-4 w-4 rounded border-foreground/30 text-button"
+                  />
+                  {color}
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-foreground/45">
+            Add product colors above to choose which colors are included at base price.
+          </p>
+        )}
+      </div>
+
       {isWristband && (
         <div className="space-y-4 p-4 border border-foreground/20 rounded-xl bg-primary/40">
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">Color band surcharge ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={colorSurcharge}
-              onChange={(e) => onColorSurchargeChange(e.target.value)}
-              className="w-full max-w-xs px-4 py-3 border border-foreground/20 rounded-xl bg-primary/60 text-foreground"
-              placeholder="e.g. 5.00"
-            />
-            <p className="text-xs text-foreground/50 mt-1">
-              Added when band color is not in the no-surcharge list below.
-            </p>
-          </div>
-          {colors.length > 0 && (
-            <div>
-              <label className="block text-sm font-semibold text-white mb-2">No-surcharge band colors</label>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <label
-                    key={color}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-foreground/20 text-sm text-white"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={noSurchargeColors.includes(color)}
-                      onChange={(e) => onNoSurchargeColorToggle(color, e.target.checked)}
-                      className="h-4 w-4 rounded border-foreground/30 text-button"
-                    />
-                    {color}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
           <div>
             <label className="block text-sm font-semibold text-white mb-2">
               Customization policy (shown on storefront & checkout)
@@ -177,8 +194,12 @@ export function ProductVariantConfig({
               onChange={(e) => onCustomizationPolicyChange(e.target.value)}
               rows={4}
               className="w-full px-4 py-3 border border-foreground/20 rounded-xl bg-primary/60 text-foreground"
-              placeholder="Pricing, lead times, shipping notes…"
+              placeholder={WRISTBAND_SUGGESTED_POLICY}
             />
+            <p className="text-xs text-foreground/50 mt-1">
+              Shown on the product page and checkout after you save. Pre-filled when wristband
+              customization is enabled — edit as needed, then save the product.
+            </p>
           </div>
         </div>
       )}

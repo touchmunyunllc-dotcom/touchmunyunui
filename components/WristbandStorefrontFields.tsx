@@ -120,11 +120,11 @@ export function WristbandStorefrontFields({
       {showPricingNote && hasSurchargeConfig && (
         <p className="text-sm text-white/70 leading-relaxed border-t border-white/10 pt-3">
           {product.noSurchargeColors?.length
-            ? `Band colors ${product.noSurchargeColors.join(' and ')} are included in the base price. `
+            ? `Colors ${product.noSurchargeColors.join(' and ')} are included in the base price. `
             : ''}
-          Other band colors add ${product.colorSurcharge!.toFixed(2)} to the unit price
+          Other colors add ${product.colorSurcharge!.toFixed(2)} to the unit price
           {colorSurchargeAmount > 0
-            ? ` (${colorSurchargeAmount.toFixed(2)} included in the price shown above).`
+            ? ` ($${colorSurchargeAmount.toFixed(2)} included in the price shown above).`
             : '.'}{' '}
           Shipping is calculated at checkout.
         </p>
