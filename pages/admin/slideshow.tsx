@@ -12,8 +12,8 @@ import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/
 import {
   AdminActiveStatusFilter,
   AdminStatusBadge,
+  AdminStatusCell,
   AdminStatusFilter,
-  AdminStatusToggleButton,
 } from '@/components/admin/AdminActiveStatus';
 
 export default function AdminSlideshow() {
@@ -309,20 +309,22 @@ export default function AdminSlideshow() {
               <div className="p-5">
                 <h3 className="font-bold text-lg mb-2 text-foreground">{slide.title || 'No Title'}</h3>
                 <p className="text-sm text-foreground/70 mb-3 line-clamp-2">{slide.subtitle}</p>
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-foreground/10">
-                  <span className="text-xs font-semibold text-foreground/60">Order: {slide.order}</span>
-                  <div className="flex gap-3">
+                <div className="flex items-end justify-between mt-4 pt-4 border-t border-foreground/10 gap-3">
+                  <div className="flex flex-col gap-2 min-w-0">
+                    <span className="text-xs font-semibold text-foreground/60">Order: {slide.order}</span>
+                    <AdminStatusCell
+                      isActive={slide.isActive}
+                      onToggle={() => handleToggleStatus(slide)}
+                      disabled={togglingStatusId === slide.id}
+                    />
+                  </div>
+                  <div className="flex gap-3 shrink-0">
                     <button
                       onClick={() => handleEdit(slide)}
                       className="text-button hover:text-button-200 text-sm font-semibold transition-colors"
                     >
                       Edit
                     </button>
-                    <AdminStatusToggleButton
-                      isActive={slide.isActive}
-                      onToggle={() => handleToggleStatus(slide)}
-                      disabled={togglingStatusId === slide.id}
-                    />
                     <button
                       onClick={() => handleDelete(slide.id)}
                       className="text-red-400 hover:text-red-300 text-sm font-semibold transition-colors"

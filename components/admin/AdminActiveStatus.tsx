@@ -52,11 +52,26 @@ export function AdminStatusToggleButton({ isActive, onToggle, disabled }: AdminS
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className={`text-sm font-semibold transition-colors disabled:opacity-50 ${
-        isActive ? 'text-amber-400 hover:text-amber-300' : 'text-emerald-400 hover:text-emerald-300'
-      }`}
+      aria-label={isActive ? 'Set inactive' : 'Set active'}
+      className="text-xs font-medium text-foreground/60 hover:text-button transition-colors disabled:opacity-50 underline-offset-2 hover:underline"
     >
-      {isActive ? 'Deactivate' : 'Activate'}
+      {isActive ? 'Set inactive' : 'Set active'}
     </button>
+  );
+}
+
+type AdminStatusCellProps = {
+  isActive: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+};
+
+/** Badge (current state) + toggle link in one column — keeps Actions for Edit only. */
+export function AdminStatusCell({ isActive, onToggle, disabled }: AdminStatusCellProps) {
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <AdminStatusBadge isActive={isActive} />
+      <AdminStatusToggleButton isActive={isActive} onToggle={onToggle} disabled={disabled} />
+    </div>
   );
 }

@@ -20,9 +20,8 @@ import {
 import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
 import {
   AdminActiveStatusFilter,
-  AdminStatusBadge,
+  AdminStatusCell,
   AdminStatusFilter,
-  AdminStatusToggleButton,
 } from '@/components/admin/AdminActiveStatus';
 
 export default function AdminCoupons() {
@@ -232,7 +231,11 @@ export default function AdminCoupons() {
                       </span>
                     </td>
                     <td className={`${adminGridCellClassName} whitespace-nowrap`}>
-                      <AdminStatusBadge isActive={coupon.isActive} />
+                      <AdminStatusCell
+                        isActive={coupon.isActive}
+                        onToggle={() => handleToggleStatus(coupon)}
+                        disabled={togglingStatusId === coupon.id}
+                      />
                     </td>
                     <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <div className="flex items-center gap-3">
@@ -242,11 +245,6 @@ export default function AdminCoupons() {
                         >
                           Edit
                         </button>
-                        <AdminStatusToggleButton
-                          isActive={coupon.isActive}
-                          onToggle={() => handleToggleStatus(coupon)}
-                          disabled={togglingStatusId === coupon.id}
-                        />
                         <button
                           onClick={() => handleDelete(coupon.id)}
                           className="text-red-400 hover:text-red-300 font-semibold transition-colors"

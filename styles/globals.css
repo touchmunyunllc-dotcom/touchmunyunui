@@ -81,26 +81,27 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.25rem), 1fr));
   }
 
-  /** Storefront product catalog — wider tiles, fewer columns per row */
+  /** Storefront product catalog — wider tiles, fewer columns per row.
+      Use auto-fill (not auto-fit) so a lone item on the last page keeps normal card width. */
   .grid-auto-fill-catalog {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   }
 
   @media (min-width: 640px) {
     .grid-auto-fill-catalog {
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
     }
   }
 
   @media (min-width: 1024px) {
     .grid-auto-fill-catalog {
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 16.5rem), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
     }
   }
 
   @media (min-width: 1280px) {
     .grid-auto-fill-catalog {
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
     }
   }
 

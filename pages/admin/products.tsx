@@ -24,9 +24,8 @@ import {
 import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
 import {
   AdminActiveStatusFilter,
-  AdminStatusBadge,
+  AdminStatusCell,
   AdminStatusFilter,
-  AdminStatusToggleButton,
 } from '@/components/admin/AdminActiveStatus';
 
 const inputClassName =
@@ -533,23 +532,20 @@ export default function AdminProducts() {
                           </span>
                         </td>
                         <td className={`${adminGridCellCompactClassName} whitespace-nowrap`}>
-                          <AdminStatusBadge isActive={product.isActive ?? true} />
+                          <AdminStatusCell
+                            isActive={product.isActive ?? true}
+                            onToggle={() => handleToggleStatus(product)}
+                            disabled={togglingStatusId === product.id}
+                          />
                         </td>
                         <td className={`${adminGridCellCompactClassName} whitespace-nowrap`}>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => router.push(`/admin/products/${product.id}/edit`)}
-                              className="px-2.5 py-1 text-xs font-medium rounded-lg border border-foreground/20 text-foreground hover:border-button/50 hover:text-button transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <AdminStatusToggleButton
-                              isActive={product.isActive ?? true}
-                              onToggle={() => handleToggleStatus(product)}
-                              disabled={togglingStatusId === product.id}
-                            />
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/admin/products/${product.id}/edit`)}
+                            className="px-2.5 py-1 text-xs font-medium rounded-lg border border-foreground/20 text-foreground hover:border-button/50 hover:text-button transition-colors"
+                          >
+                            Edit
+                          </button>
                         </td>
                       </tr>
                     ))}
