@@ -33,7 +33,7 @@ export const ScrollToTop: React.FC = () => {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 left-6 z-50 w-12 h-12 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-full shadow-2xl hover:shadow-primary-500/50 flex items-center justify-center transform hover:scale-110 transition-all duration-300 animate-pulse-glow"
+      className="fixed bottom-above-mobile-nav md:bottom-6 left-6 z-40 w-12 h-12 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-full shadow-2xl hover:shadow-primary-500/50 flex items-center justify-center transform hover:scale-110 transition-all duration-300 animate-pulse-glow touch-manipulation"
       aria-label="Scroll to top"
     >
       <svg

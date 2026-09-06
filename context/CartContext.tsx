@@ -25,6 +25,8 @@ interface CartItem {
   customizationPolicy?: string;
 }
 
+export type { CartItem };
+
 /** When multiple cart lines share the same productId (different color/size), pass this so the correct line is updated. */
 export type CartLineKey = {
   selectedColor?: string;
@@ -37,7 +39,10 @@ export type CartLineKey = {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'id'>, options?: { merge?: GuestCartMergeMode }) => Promise<void>;
+  addItem: (
+    item: Omit<CartItem, 'id'>,
+    options?: { merge?: GuestCartMergeMode; openDrawer?: boolean }
+  ) => Promise<void>;
   removeItem: (productId: string, line?: CartLineKey) => Promise<void>;
   updateQuantity: (productId: string, quantity: number, line?: CartLineKey) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -51,6 +56,10 @@ interface CartContextType {
   total: number;
   itemCount: number;
   loading: boolean;
+  isDrawerOpen: boolean;
+  lastAddedItem: Omit<CartItem, 'id'> | null;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 }
 
 function findCartLine(
@@ -80,6 +89,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const [discount, setDiscount] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [lastAddedItem, setLastAddedItem] = useState<Omit<CartItem, 'id'> | null>(null);
   const { user, isAuthenticated } = useAuth();
   const guestTaxRate = 0.1;
   const itemsRef = useRef(items);
@@ -267,8 +278,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     updateGuestSummary(deduped);
   }, [items, isAuthenticated]);
 
-  const addItem = async (item: Omit<CartItem, 'id'>, options?: { merge?: GuestCartMergeMode }) => {
+  const openDrawer = useCallback(() => {
+    setIsDrawerOpen(true);
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+    window.setTimeout(() => setLastAddedItem(null), 300);
+  }, []);
+
+  const openDrawerAfterAdd = useCallback((item: Omit<CartItem, 'id'>) => {
+    setLastAddedItem(item);
+    setIsDrawerOpen(true);
+  }, []);
+
+  const addItem = async (
+    item: Omit<CartItem, 'id'>,
+    options?: { merge?: GuestCartMergeMode; openDrawer?: boolean }
+  ) => {
     const mergeMode = options?.merge ?? 'add';
+    const shouldOpenDrawer = options?.openDrawer ?? mergeMode === 'add';
 
     if (isAuthenticated && isAdminUser(user)) {
       notificationService.error(ADMIN_SHOPPING_BLOCKED_MESSAGE);
@@ -287,6 +316,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
           item.writingColor
         );
         await loadCart();
+        if (shouldOpenDrawer) openDrawerAfterAdd(item);
       } catch (error: any) {
         console.error('Failed to add item to cart:', error);
         notificationService.apiError(error, 'Failed to add item to cart');
@@ -302,6 +332,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         persistGuestCart(nextItems);
         return nextItems;
       });
+      if (shouldOpenDrawer) openDrawerAfterAdd(item);
     }
   };
 
@@ -411,6 +442,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         total,
         itemCount,
         loading,
+        isDrawerOpen,
+        lastAddedItem,
+        openDrawer,
+        closeDrawer,
       }}
     >
       {children}

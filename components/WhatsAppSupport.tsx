@@ -123,7 +123,7 @@ export const WhatsAppSupport: React.FC<WhatsAppSupportProps> = ({
       {/* WhatsApp Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 left-4 sm:left-6 z-50 group whatsapp-button"
+        className="fixed bottom-above-mobile-nav md:bottom-6 left-4 sm:left-6 z-40 group whatsapp-button touch-manipulation"
         aria-label="Contact TouchMunyun Support on WhatsApp"
       >
         <div className="flex items-center gap-3 bg-[#25D366] hover:bg-[#20BA5A] text-white rounded-full shadow-2xl hover:shadow-[#25D366]/50 px-4 py-3 transform hover:scale-105 transition-all duration-300 animate-pulse-glow">
@@ -161,7 +161,7 @@ export const WhatsAppSupport: React.FC<WhatsAppSupportProps> = ({
 
       {/* Interactive Popup */}
       {isOpen && (
-        <div className="fixed bottom-24 left-4 sm:left-6 z-50 whatsapp-popup animate-fade-in">
+        <div className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px)+5rem)] md:bottom-24 left-4 sm:left-6 z-40 whatsapp-popup animate-fade-in">
           <div className="bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-glass-lg border-2 border-gray-800/50 w-80 sm:w-96 overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-[#25D366]/90 to-[#20BA5A]/90 backdrop-blur-md p-4 flex items-center justify-between border-b border-[#25D366]/30">

@@ -317,7 +317,7 @@ export const Chatbot: React.FC = () => {
       {/* Chatbot Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-button text-button-text backdrop-blur-md rounded-full shadow-glass-lg hover:shadow-xl flex items-center justify-center transform hover:scale-110 transition-all duration-300 hover:bg-button-200 border-2 border-foreground/20"
+        className="fixed bottom-above-mobile-nav md:bottom-6 right-4 md:right-6 z-40 w-14 h-14 bg-button text-button-text backdrop-blur-md rounded-full shadow-glass-lg hover:shadow-xl flex items-center justify-center transform hover:scale-110 transition-all duration-300 hover:bg-button-200 border-2 border-foreground/20 touch-manipulation"
         aria-label="Open chatbot"
       >
         {isOpen ? (
@@ -343,7 +343,7 @@ export const Chatbot: React.FC = () => {
 
       {/* Chatbot Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 h-[600px] bg-primary/95 backdrop-blur-xl rounded-3xl shadow-glass-lg flex flex-col overflow-hidden border-2 border-foreground/20">
+        <div className="fixed bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px)+5.5rem)] md:bottom-24 right-4 md:right-6 z-40 w-[min(100vw-2rem,24rem)] md:w-96 h-[min(70vh,600px)] bg-primary/95 backdrop-blur-xl rounded-3xl shadow-glass-lg flex flex-col overflow-hidden border-2 border-foreground/20">
           {/* Header */}
           <div className="bg-button text-button-text backdrop-blur-md p-4 flex items-center justify-between flex-shrink-0 border-b-2 border-foreground/10">
             <div className="flex items-center gap-3">

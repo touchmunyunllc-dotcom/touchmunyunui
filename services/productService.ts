@@ -23,9 +23,12 @@ export interface Product {
   isNewArrival?: boolean;
   isBestSeller?: boolean;
   isFeatured?: boolean;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export type AdminActiveStatusFilter = 'all' | 'active' | 'inactive';
 
 export const productService = {
   async getAll(filters?: {
@@ -35,6 +38,7 @@ export const productService = {
     maxPrice?: number;
     page?: number;
     pageSize?: number;
+    status?: AdminActiveStatusFilter;
   }): Promise<Product[] | { products: Product[]; totalCount: number; page: number; pageSize: number; totalPages: number }> {
     const response = await apiClient.get<any>('/products', {
       params: filters,
@@ -94,6 +98,7 @@ export const productService = {
     isNewArrival?: boolean;
     isBestSeller?: boolean;
     isFeatured?: boolean;
+    isActive?: boolean;
   }) {
     const response = await apiClient.post<Product>('/products', product);
     return response.data;
@@ -120,6 +125,7 @@ export const productService = {
     isNewArrival?: boolean;
     isBestSeller?: boolean;
     isFeatured?: boolean;
+    isActive?: boolean;
   }) {
     const response = await apiClient.put<Product>(`/products/${id}`, product);
     return response.data;

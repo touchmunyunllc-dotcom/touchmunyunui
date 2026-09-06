@@ -84,7 +84,11 @@ export const couponService = {
   /** Public marketing list (homepage hero, cart) — Admin → Coupons only; no static fallback. */
   getPromo: fetchPromoCoupons,
 
-  async getAll(options?: { page?: number; pageSize?: number }): Promise<Coupon[] | { coupons: Coupon[]; totalCount: number; page: number; pageSize: number; totalPages: number }> {
+  async getAll(options?: {
+    page?: number;
+    pageSize?: number;
+    status?: 'all' | 'active' | 'inactive';
+  }): Promise<Coupon[] | { coupons: Coupon[]; totalCount: number; page: number; pageSize: number; totalPages: number }> {
     const response = await apiClient.get<any>('/coupons', {
       params: options,
     });

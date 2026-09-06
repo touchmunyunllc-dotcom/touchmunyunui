@@ -6,9 +6,10 @@ import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/authService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ProfileAddresses } from '@/components/ProfileAddresses';
 import { SEO } from '@/components/SEO';
 
-type ProfileTab = 'account' | 'security';
+type ProfileTab = 'account' | 'addresses' | 'security';
 
 const inputClassName =
   'w-full px-4 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-red-500/30 focus:border-red-500/40 bg-black/20 backdrop-blur-sm text-foreground placeholder-foreground/45 transition-all';
@@ -221,6 +222,7 @@ export default function Profile() {
                 {(
                   [
                     { id: 'account' as const, label: 'Account details' },
+                    { id: 'addresses' as const, label: 'Shipping addresses' },
                     { id: 'security' as const, label: 'Password & security' },
                   ] as const
                 ).map((tab) => (
@@ -339,6 +341,8 @@ export default function Profile() {
                     </div>
                   </form>
                 </>
+              ) : activeTab === 'addresses' ? (
+                <ProfileAddresses />
               ) : (
                 <>
                   <div className="mb-6 pb-6 border-b border-foreground/10">

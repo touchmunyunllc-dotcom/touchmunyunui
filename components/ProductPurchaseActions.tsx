@@ -62,7 +62,6 @@ export function ProductPurchaseActions({ product, compact = false }: ProductPurc
     setAddingToCart(true);
     try {
       await addItem(toDefaultCartPayload(product, 1), { merge: 'add' });
-      notificationService.success(`${product.name} added to cart!`);
     } catch {
       // CartContext shows error
     } finally {

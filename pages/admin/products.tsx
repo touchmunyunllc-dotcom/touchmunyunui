@@ -22,6 +22,12 @@ import {
   adminSelectOptionProps,
 } from '@/lib/adminFormStyles';
 import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
+import {
+  AdminActiveStatusFilter,
+  AdminStatusBadge,
+  AdminStatusFilter,
+  AdminStatusToggleButton,
+} from '@/components/admin/AdminActiveStatus';
 
 const inputClassName =
   'w-full px-4 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-button/50 focus:border-button/50 bg-primary/60 backdrop-blur-sm text-foreground placeholder-foreground/50 transition-all';
@@ -35,6 +41,8 @@ export default function AdminProducts() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<AdminActiveStatusFilter>('all');
+  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -59,7 +67,7 @@ export default function AdminProducts() {
     }
 
     fetchProducts();
-  }, [isAuthenticated, user, router, pagination.page, pagination.pageSize, searchQuery, categoryFilter]);
+  }, [isAuthenticated, user, router, pagination.page, pagination.pageSize, searchQuery, categoryFilter, statusFilter]);
 
   const handlePageSizeChange = (pageSize: number) => {
     setPagination((prev) => ({ ...prev, page: 1, pageSize }));
@@ -77,6 +85,7 @@ export default function AdminProducts() {
         pageSize: pagination.pageSize,
         search: searchQuery.trim() || undefined,
         category: categoryFilter || undefined,
+        status: statusFilter,
       });
       
       if (Array.isArray(result)) {
@@ -112,15 +121,20 @@ export default function AdminProducts() {
     return Array.from(categories).sort((a, b) => a.localeCompare(b));
   }, [products]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const handleToggleStatus = async (product: Product) => {
+    const nextActive = !(product.isActive ?? true);
+    const action = nextActive ? 'activate' : 'deactivate';
+    if (!confirm(`Are you sure you want to ${action} "${product.name}"?`)) return;
 
     try {
-      await productService.delete(id);
-      notificationService.success('Product deleted');
-      fetchProducts(); // Refresh the list
-    } catch (error) {
-      notificationService.error('Failed to delete product');
+      setTogglingStatusId(product.id);
+      await productService.update(product.id, { isActive: nextActive });
+      notificationService.success(`Product ${nextActive ? 'activated' : 'deactivated'}`);
+      fetchProducts();
+    } catch (error: any) {
+      notificationService.error(error.response?.data?.message || `Failed to ${action} product`);
+    } finally {
+      setTogglingStatusId(null);
     }
   };
 
@@ -283,7 +297,7 @@ export default function AdminProducts() {
         </div>
 
         <div className="bg-primary/80 backdrop-blur-xl rounded-2xl shadow-glass-lg p-4 mb-4 border border-foreground/10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-white mb-2">Search products</label>
               <input
@@ -314,6 +328,17 @@ export default function AdminProducts() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">Status</label>
+              <AdminStatusFilter
+                value={statusFilter}
+                onChange={(value) => {
+                  setStatusFilter(value);
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                className="w-full"
+              />
             </div>
           </div>
         </div>
@@ -364,6 +389,7 @@ export default function AdminProducts() {
                       <th className={adminGridHeadCellCompactClassName}>Regular</th>
                       <th className={adminGridHeadCellCompactClassName}>Sale</th>
                       <th className={adminGridHeadCellCompactClassName}>Stock</th>
+                      <th className={adminGridHeadCellCompactClassName}>Status</th>
                       <th className={adminGridHeadCellCompactClassName}>Actions</th>
                     </tr>
                   </thead>
@@ -507,6 +533,9 @@ export default function AdminProducts() {
                           </span>
                         </td>
                         <td className={`${adminGridCellCompactClassName} whitespace-nowrap`}>
+                          <AdminStatusBadge isActive={product.isActive ?? true} />
+                        </td>
+                        <td className={`${adminGridCellCompactClassName} whitespace-nowrap`}>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
@@ -515,13 +544,11 @@ export default function AdminProducts() {
                             >
                               Edit
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(product.id)}
-                              className="px-2.5 py-1 text-xs font-medium rounded-lg border border-red-500/30 text-red-300 hover:bg-red-500/10 transition-colors"
-                            >
-                              Delete
-                            </button>
+                            <AdminStatusToggleButton
+                              isActive={product.isActive ?? true}
+                              onToggle={() => handleToggleStatus(product)}
+                              disabled={togglingStatusId === product.id}
+                            />
                           </div>
                         </td>
                       </tr>

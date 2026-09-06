@@ -4,6 +4,8 @@ import {
   getProductGalleryImages,
   resolveProductImageStyle,
 } from '@/services/productCustomizationService';
+import { ProductImage } from '@/components/ProductImage';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 
 interface ProductCardGalleryProps {
   product: Pick<Product, 'id' | 'name' | 'imageUrl' | 'images' | 'colorImages' | 'imageObjectPosition'>;
@@ -63,6 +65,14 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
           : 'aspect-[4/5] w-full';
 
   const imageFitClass = variant === 'detail' ? 'object-contain p-4' : 'object-cover';
+  const imageSizes =
+    variant === 'detail'
+      ? IMAGE_SIZES.productDetail
+      : variant === 'list'
+        ? IMAGE_SIZES.productListThumb
+        : compact
+          ? IMAGE_SIZES.productCardCompact
+          : IMAGE_SIZES.productCard;
 
   return (
     <div
@@ -73,11 +83,13 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
       onMouseLeave={() => setPaused(false)}
     >
       {images.map((src, imageIndex) => (
-        <img
+        <ProductImage
           key={`${src}-${imageIndex}`}
           src={src}
           alt={hasMultiple ? `${product.name} — view ${imageIndex + 1}` : product.name}
           style={imageStyle}
+          sizes={imageSizes}
+          priority={imageIndex === 0 && variant === 'detail'}
           className={`absolute inset-0 w-full h-full ${imageFitClass} transition-opacity duration-700 ${
             imageIndex === index ? 'opacity-100' : 'opacity-0'
           } ${variant === 'detail' ? '' : 'transition-transform duration-500'}`}

@@ -10,6 +10,8 @@ import { CartLineCustomizationTags } from '@/components/CartLineCustomizationTag
 import { getCartLineOptions, dedupeGuestCartLines } from '@/services/productCustomizationService';
 import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
 import { CouponSlider } from '@/components/CouponSlider';
+import { ProductImage } from '@/components/ProductImage';
+import { IMAGE_SIZES } from '@/lib/imageSizes';
 import { ADMIN_SHOPPING_BLOCKED_MESSAGE, isAdminUser } from '@/lib/adminShopping';
 import Link from 'next/link';
 
@@ -95,11 +97,14 @@ export default function Cart() {
                       key={item.id}
                       className="flex gap-3 sm:gap-4 p-4 rounded-xl border border-foreground/20 hover:border-button hover:shadow-md transition-all duration-200 bg-primary/60 min-w-0 overflow-hidden"
                     >
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl shrink-0"
-                      />
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-foreground/10">
+                        <ProductImage
+                          src={item.image}
+                          alt={item.name}
+                          sizes={IMAGE_SIZES.cartThumb}
+                          className="object-cover"
+                        />
+                      </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 break-words">
                           {item.name}

@@ -6,12 +6,14 @@ import { useCart } from '@/context/CartContext';
 import { VersionInfo } from './VersionInfo';
 import { ScrollToTop } from './ScrollToTop';
 import { PaymentMethods } from './PaymentMethods';
+import { CartDrawer } from './CartDrawer';
+import { MobileBottomNav } from './MobileBottomNav';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user, isAuthenticated, logout } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, openDrawer } = useCart();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +46,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [userMenuOpen]);
+
+  const isCustomerStorefront = user?.role !== 'admin';
 
   return (
     <div className="min-h-screen flex flex-col bg-primary overflow-x-hidden w-full">
@@ -246,13 +250,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
                       <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-1 bg-button rounded-full animate-pulse" />
                     )}
                   </Link>
-                  <Link
-                    href="/cart"
-                    className={`relative font-medium transition-all duration-300 group flex items-center gap-2 ${
+                  <button
+                    type="button"
+                    onClick={openDrawer}
+                    className={`relative font-medium transition-all duration-300 group flex items-center gap-2 touch-manipulation ${
                       router.pathname === '/cart'
-                        ? 'text-button' 
+                        ? 'text-button'
                         : 'text-foreground hover:text-button'
                     }`}
+                    aria-label={`Open cart${itemCount > 0 ? `, ${itemCount} items` : ''}`}
                   >
                     <svg
                       className="w-5 h-5"
@@ -269,14 +275,14 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
                     </svg>
                     <span className="hidden lg:inline">Cart</span>
                     {itemCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-gold-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
+                      <span className="absolute -top-2 -right-2 bg-gold-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
                         {itemCount}
                       </span>
                     )}
                     {router.pathname === '/cart' && (
                       <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-button" />
                     )}
-                  </Link>
+                  </button>
                 </>
               )}
               {/* User Menu */}
@@ -631,10 +637,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
                   >
                     About
                   </Link>
-                  <Link
-                    href="/cart"
-                    className="text-foreground hover:text-button font-medium flex items-center gap-2"
-                    onClick={() => setMobileMenuOpen(false)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openDrawer();
+                    }}
+                    className="text-foreground hover:text-button font-medium flex items-center gap-2 touch-manipulation w-full text-left"
                   >
                     Cart
                     {itemCount > 0 && (
@@ -642,7 +651,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
                         {itemCount}
                       </span>
                     )}
-                  </Link>
+                  </button>
                 </div>
               )}
                 {isAuthenticated ? (
@@ -797,7 +806,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
         </div>
       </nav>
 
-      <main className="flex-grow w-full min-w-0 overflow-x-hidden">{children}</main>
+      <main className={`flex-grow w-full min-w-0 overflow-x-hidden ${isCustomerStorefront ? 'pb-mobile-nav md:pb-0' : ''}`}>
+        {children}
+      </main>
 
       {/* Sports Background Section Above Footer */}
       <section className="relative overflow-hidden bg-black py-20">
@@ -996,6 +1007,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({
 
       {/* Scroll to Top Button */}
       <ScrollToTop />
+
+      {isCustomerStorefront && <MobileBottomNav />}
+      {isCustomerStorefront && <CartDrawer />}
     </div>
   );
 };

@@ -18,6 +18,12 @@ import {
   adminGridCellClassName,
 } from '@/lib/adminFormStyles';
 import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
+import {
+  AdminActiveStatusFilter,
+  AdminStatusBadge,
+  AdminStatusFilter,
+  AdminStatusToggleButton,
+} from '@/components/admin/AdminActiveStatus';
 
 export default function AdminCoupons() {
   const { user, isAuthenticated } = useAuth();
@@ -33,6 +39,8 @@ export default function AdminCoupons() {
     totalCount: 0,
     totalPages: 0,
   });
+  const [statusFilter, setStatusFilter] = useState<AdminActiveStatusFilter>('all');
+  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') {
@@ -41,7 +49,7 @@ export default function AdminCoupons() {
     }
 
     fetchCoupons();
-  }, [isAuthenticated, user, router, pagination.page]);
+  }, [isAuthenticated, user, router, pagination.page, pagination.pageSize, statusFilter]);
 
   const fetchCoupons = async () => {
     try {
@@ -49,6 +57,7 @@ export default function AdminCoupons() {
       const result = await couponService.getAll({
         page: pagination.page,
         pageSize: pagination.pageSize,
+        status: statusFilter,
       });
       
       if (Array.isArray(result)) {
@@ -94,6 +103,23 @@ export default function AdminCoupons() {
     setShowForm(true);
   };
 
+  const handleToggleStatus = async (coupon: Coupon) => {
+    const nextActive = !coupon.isActive;
+    const action = nextActive ? 'activate' : 'deactivate';
+    if (!confirm(`Are you sure you want to ${action} coupon "${coupon.code}"?`)) return;
+
+    try {
+      setTogglingStatusId(coupon.id);
+      await couponService.update(coupon.id, { isActive: nextActive });
+      notificationService.success(`Coupon ${nextActive ? 'activated' : 'deactivated'}`);
+      fetchCoupons();
+    } catch (error: any) {
+      notificationService.error(error.response?.data?.message || `Failed to ${action} coupon`);
+    } finally {
+      setTogglingStatusId(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this coupon?')) return;
 
@@ -130,9 +156,17 @@ export default function AdminCoupons() {
             {getAdminBackLabel(dashboardReturnTab)}
           </Link>
         </div>
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <h1 className="text-4xl font-bold text-foreground">Admin - Coupons</h1>
-          <button
+          <div className="flex flex-wrap items-center gap-3">
+            <AdminStatusFilter
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+            />
+            <button
             onClick={() => {
               setEditingCoupon(null);
               setShowForm(true);
@@ -141,6 +175,7 @@ export default function AdminCoupons() {
           >
             Create Coupon
           </button>
+          </div>
         </div>
 
         {showForm ? (
@@ -197,15 +232,7 @@ export default function AdminCoupons() {
                       </span>
                     </td>
                     <td className={`${adminGridCellClassName} whitespace-nowrap`}>
-                      <span
-                        className={`px-3 py-1 text-xs font-bold rounded-full ${
-                          coupon.isActive
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        }`}
-                      >
-                        {coupon.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                      <AdminStatusBadge isActive={coupon.isActive} />
                     </td>
                     <td className={`${adminGridCellClassName} whitespace-nowrap`}>
                       <div className="flex items-center gap-3">
@@ -215,6 +242,11 @@ export default function AdminCoupons() {
                         >
                           Edit
                         </button>
+                        <AdminStatusToggleButton
+                          isActive={coupon.isActive}
+                          onToggle={() => handleToggleStatus(coupon)}
+                          disabled={togglingStatusId === coupon.id}
+                        />
                         <button
                           onClick={() => handleDelete(coupon.id)}
                           className="text-red-400 hover:text-red-300 font-semibold transition-colors"

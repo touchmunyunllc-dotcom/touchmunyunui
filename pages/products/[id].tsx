@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/Layout';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ProductDetailSkeleton } from '@/components/skeletons/ProductDetailSkeleton';
+import { RelatedProducts } from '@/components/RelatedProducts';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { ProductCardGallery } from '@/components/ProductCardGallery';
@@ -141,7 +143,6 @@ export default function ProductView() {
     setAddingToCart(true);
     try {
       await addItem(toCartPayload(quantity), { merge: 'add' });
-      notificationService.success(`${product.name} added to cart!`);
     } catch {
       // Error already handled in CartContext
     } finally {
@@ -168,9 +169,9 @@ export default function ProductView() {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
+        <section className="bg-black min-h-screen">
+          <ProductDetailSkeleton />
+        </section>
       </Layout>
     );
   }
@@ -499,6 +500,8 @@ export default function ProductView() {
                 </Link>
               </div>
             </div>
+
+            <RelatedProducts productId={product.id} category={product.category} />
           </div>
         </section>
       </Layout>

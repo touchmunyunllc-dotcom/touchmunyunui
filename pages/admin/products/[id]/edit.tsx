@@ -45,6 +45,7 @@ export default function EditProduct() {
     isNewArrival: false,
     isBestSeller: false,
     isFeatured: false,
+    isActive: true,
   });
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function EditProduct() {
         isNewArrival: product.isNewArrival ?? false,
         isBestSeller: product.isBestSeller ?? false,
         isFeatured: product.isFeatured ?? false,
+        isActive: product.isActive ?? true,
       });
       setGalleryImages(normalizeProductGalleryImages(product));
       variant.loadFromProduct({
@@ -147,6 +149,7 @@ export default function EditProduct() {
         isNewArrival: formData.isNewArrival,
         isBestSeller: formData.isBestSeller,
         isFeatured: formData.isFeatured,
+        isActive: formData.isActive,
         ...variant.toApiPayload('update'),
       });
 
@@ -245,6 +248,21 @@ export default function EditProduct() {
                     className={inputClassName}
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="mr-2 w-4 h-4 rounded border-foreground/30 text-button focus:ring-button/50"
+                    />
+                    <span className="text-sm font-semibold text-white">Active on storefront</span>
+                  </label>
+                  <p className="text-xs text-foreground/50 mt-1 ml-6">
+                    Uncheck to hide this product from customers without deleting it.
+                  </p>
                 </div>
               </>
             )}

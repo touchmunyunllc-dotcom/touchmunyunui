@@ -37,7 +37,11 @@ export interface UpdateSlideRequest {
 }
 
 export const slideshowService = {
-  getAll: async (options?: { page?: number; pageSize?: number }): Promise<Slide[] | { slides: Slide[]; totalCount: number; page: number; pageSize: number; totalPages: number }> => {
+  getAll: async (options?: {
+    page?: number;
+    pageSize?: number;
+    status?: 'all' | 'active' | 'inactive';
+  }): Promise<Slide[] | { slides: Slide[]; totalCount: number; page: number; pageSize: number; totalPages: number }> => {
     const response = await apiClient.get<any>('/slideshow', {
       params: options,
     });

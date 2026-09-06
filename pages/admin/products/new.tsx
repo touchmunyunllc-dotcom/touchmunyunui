@@ -43,6 +43,7 @@ export default function NewProduct() {
     isNewArrival: false,
     isBestSeller: false,
     isFeatured: false,
+    isActive: true,
   });
 
   if (!isAuthenticated || user?.role !== 'admin') {
@@ -104,6 +105,7 @@ export default function NewProduct() {
         isNewArrival: formData.isNewArrival,
         isBestSeller: formData.isBestSeller,
         isFeatured: formData.isFeatured,
+        isActive: formData.isActive,
         ...variant.toApiPayload('create'),
       });
 
@@ -195,6 +197,21 @@ export default function NewProduct() {
                     placeholder="e.g., Apparel, Accessories"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="mr-2 w-4 h-4 rounded border-foreground/30 text-button focus:ring-button/50"
+                    />
+                    <span className="text-sm font-semibold text-white">Active on storefront</span>
+                  </label>
+                  <p className="text-xs text-foreground/50 mt-1 ml-6">
+                    Uncheck to hide this product from customers without deleting it.
+                  </p>
                 </div>
               </>
             )}

@@ -129,6 +129,26 @@ body {
   .sticky-below-nav {
     @apply sticky top-20 z-30;
   }
+
+  /** Reserve space above fixed mobile bottom nav (Home · Shop · Cart · Account) */
+  .pb-mobile-nav {
+    padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /** Float FABs above mobile bottom nav */
+  .bottom-above-mobile-nav {
+    bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .pb-mobile-nav {
+    padding-bottom: 0;
+  }
+
+  .bottom-above-mobile-nav {
+    bottom: 1.5rem;
+  }
 }
 
 /* Custom animations */

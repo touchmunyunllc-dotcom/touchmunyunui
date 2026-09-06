@@ -6,13 +6,14 @@ import { ProductCard } from '@/components/ProductCard';
 import { ProductCardGallery } from '@/components/ProductCardGallery';
 import { ProductPurchaseActions } from '@/components/ProductPurchaseActions';
 import { ProductAudienceBadge } from '@/components/ProductAudienceBadge';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
+import { ProductGridSkeleton } from '@/components/skeletons/ProductCardSkeleton';
 import { Pagination } from '@/components/Pagination';
 import { SEO } from '@/components/SEO';
 import { productService, Product } from '@/services/productService';
 import { notificationService } from '@/services/notificationService';
 import { productHref } from '@/lib/productRoutes';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 
 type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'newest';
 type ViewMode = 'grid' | 'list';
@@ -24,7 +25,8 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>('');
+  const debouncedSearch = useDebouncedValue(searchInput, 350);
   const [sortOption, setSortOption] = useState<SortOption>('newest');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
@@ -32,24 +34,34 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(STORE_PAGE_SIZE_OPTIONS[0]);
 
-  // Initialize search query from URL
+  // Initialize search from URL
   useEffect(() => {
-    if (router.query.search && typeof router.query.search === 'string') {
-      setSearchQuery(router.query.search);
-    }
-  }, [router.query.search]);
+    if (!router.isReady) return;
+    const urlSearch = typeof router.query.search === 'string' ? router.query.search : '';
+    setSearchInput(urlSearch);
+  }, [router.isReady, router.query.search]);
+
+  // Sync debounced search to URL (shareable, back-button friendly)
+  useEffect(() => {
+    if (!router.isReady) return;
+    const current = typeof router.query.search === 'string' ? router.query.search : '';
+    const next = debouncedSearch.trim();
+    if (next === current) return;
+
+    const query = next ? { search: next } : {};
+    void router.replace({ pathname: '/products', query }, undefined, { shallow: true, scroll: false });
+  }, [debouncedSearch, router.isReady, router.query.search, router]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // Use search query from URL or state
-        const search = (router.query.search as string) || searchQuery;
+        const search =
+          typeof router.query.search === 'string' ? router.query.search.trim() : '';
         const filters = search ? { search } : undefined;
         const result = await productService.getAll(filters);
         const data = Array.isArray(result) ? result : result.products;
         setProducts(data);
-        // Set max price from products
         const maxPrice = Math.max(...data.map((p: Product) => p.price), 1000);
         setPriceRange([0, maxPrice]);
       } catch (error) {
@@ -59,8 +71,10 @@ export default function Products() {
       }
     };
 
-    fetchProducts();
-  }, [router.query.search, searchQuery]);
+    if (router.isReady) {
+      void fetchProducts();
+    }
+  }, [router.isReady, router.query.search]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -102,7 +116,7 @@ export default function Products() {
     });
 
     return sorted;
-  }, [products, selectedCategory, searchQuery, sortOption, priceRange]);
+  }, [products, selectedCategory, sortOption, priceRange]);
 
   const pagedProducts = useMemo(() => {
     const totalCount = filteredAndSortedProducts.length;
@@ -119,7 +133,7 @@ export default function Products() {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedCategory, searchQuery, sortOption, priceRange]);
+  }, [selectedCategory, debouncedSearch, sortOption, priceRange]);
 
   useEffect(() => {
     if (page > pagedProducts.totalPages) {
@@ -164,8 +178,8 @@ export default function Products() {
                 <input
                   type="text"
                   placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 text-sm border border-white/15 rounded-lg focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50 bg-white/5 text-white placeholder-white/40"
                 />
                 <svg
@@ -288,15 +302,16 @@ export default function Products() {
                       </div>
                     </div>
                     {(selectedCategory !== 'all' ||
-                      searchQuery ||
+                      searchInput ||
                       priceRange[0] > 0 ||
                       priceRange[1] < maxPrice) && (
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedCategory('all');
-                          setSearchQuery('');
+                          setSearchInput('');
                           setPriceRange([0, maxPrice]);
+                          void router.replace('/products', undefined, { shallow: true, scroll: false });
                         }}
                         className="shrink-0 px-4 py-2 text-sm text-red-400 border border-red-600/40 rounded-xl hover:bg-red-600/10"
                       >
@@ -312,9 +327,7 @@ export default function Products() {
           {/* Products Grid/List — full width, smooth vertical scroll only */}
           <div>
               {loading ? (
-                <div className="flex justify-center items-center py-20">
-                  <LoadingSpinner size="lg" />
-                </div>
+                <ProductGridSkeleton count={pageSize} compact />
               ) : filteredAndSortedProducts.length === 0 ? (
                 <EmptyState
                   variant="search"
@@ -323,9 +336,10 @@ export default function Products() {
                   action={{
                     label: 'Clear Filters',
                     onClick: () => {
-                      setSearchQuery('');
-                      setSelectedCategory('');
+                      setSearchInput('');
+                      setSelectedCategory('all');
                       setSortOption('name-asc');
+                      void router.replace('/products', undefined, { shallow: true, scroll: false });
                     },
                   }}
                 />

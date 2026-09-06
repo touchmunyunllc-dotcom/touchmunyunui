@@ -9,6 +9,12 @@ import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Pagination } from '@/components/Pagination';
 import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
+import {
+  AdminActiveStatusFilter,
+  AdminStatusBadge,
+  AdminStatusFilter,
+  AdminStatusToggleButton,
+} from '@/components/admin/AdminActiveStatus';
 
 export default function AdminSlideshow() {
   const router = useRouter();
@@ -37,6 +43,8 @@ export default function AdminSlideshow() {
     totalCount: 0,
     totalPages: 0,
   });
+  const [statusFilter, setStatusFilter] = useState<AdminActiveStatusFilter>('all');
+  const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -50,7 +58,7 @@ export default function AdminSlideshow() {
     }
 
     fetchSlides();
-  }, [isAuthenticated, user, router, pagination.page]);
+  }, [isAuthenticated, user, router, pagination.page, pagination.pageSize, statusFilter]);
 
   const fetchSlides = async () => {
     try {
@@ -58,6 +66,7 @@ export default function AdminSlideshow() {
       const result = await slideshowService.getAll({
         page: pagination.page,
         pageSize: pagination.pageSize,
+        status: statusFilter,
       });
       
       if (Array.isArray(result)) {
@@ -136,6 +145,24 @@ export default function AdminSlideshow() {
       isActive: slide.isActive,
     });
     setIsModalOpen(true);
+  };
+
+  const handleToggleStatus = async (slide: Slide) => {
+    const nextActive = !slide.isActive;
+    const action = nextActive ? 'activate' : 'deactivate';
+    const label = slide.title || slide.alt || 'this slide';
+    if (!confirm(`Are you sure you want to ${action} "${label}"?`)) return;
+
+    try {
+      setTogglingStatusId(slide.id);
+      await slideshowService.update(slide.id, { isActive: nextActive });
+      notificationService.success(`Slide ${nextActive ? 'activated' : 'deactivated'}`);
+      fetchSlides();
+    } catch (error: any) {
+      notificationService.error(error.response?.data?.message || `Failed to ${action} slide`);
+    } finally {
+      setTogglingStatusId(null);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -224,9 +251,17 @@ export default function AdminSlideshow() {
             {getAdminBackLabel(dashboardReturnTab)}
           </Link>
         </div>
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <h1 className="text-4xl font-bold text-foreground">Manage Slideshow</h1>
-          <button
+          <div className="flex flex-wrap items-center gap-3">
+            <AdminStatusFilter
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+            />
+            <button
             onClick={() => {
               resetForm();
               setIsModalOpen(true);
@@ -235,6 +270,7 @@ export default function AdminSlideshow() {
           >
             Add New Slide
           </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -264,6 +300,11 @@ export default function AdminSlideshow() {
                     Inactive
                   </div>
                 )}
+                {slide.isActive && (
+                  <div className="absolute top-3 right-3">
+                    <AdminStatusBadge isActive />
+                  </div>
+                )}
               </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg mb-2 text-foreground">{slide.title || 'No Title'}</h3>
@@ -277,6 +318,11 @@ export default function AdminSlideshow() {
                     >
                       Edit
                     </button>
+                    <AdminStatusToggleButton
+                      isActive={slide.isActive}
+                      onToggle={() => handleToggleStatus(slide)}
+                      disabled={togglingStatusId === slide.id}
+                    />
                     <button
                       onClick={() => handleDelete(slide.id)}
                       className="text-red-400 hover:text-red-300 text-sm font-semibold transition-colors"
