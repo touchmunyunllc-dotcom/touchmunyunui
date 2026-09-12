@@ -8,6 +8,7 @@ export const UpdateAvailable: React.FC = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (process.env.NODE_ENV === 'development') return;
 
     // Listen for service worker updates
     if ('serviceWorker' in navigator) {

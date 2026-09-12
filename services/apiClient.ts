@@ -16,6 +16,11 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
+    // Let the browser set multipart boundary (default Content-Type: application/json breaks uploads).
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      config.headers = config.headers ?? {};
+      delete config.headers['Content-Type'];
+    }
     const token = tokenStorage.get();
     if (token) {
       config.headers = config.headers ?? {};

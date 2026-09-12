@@ -2,7 +2,7 @@ import { Product } from '@/services/productService';
 
 export type ProductAudience = 'women' | 'men' | 'unisex';
 
-const WOMEN_HINTS = ['crop top', 'crop', 'sleeveless'];
+const WOMEN_HINTS = ['crop top', 'crop'];
 const UNISEX_HINTS = [
   'wristband',
   'wrist',

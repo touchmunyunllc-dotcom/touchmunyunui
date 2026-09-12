@@ -1,5 +1,7 @@
 import type { AppProps } from 'next/app';
+import { useEffect } from 'react';
 import Head from 'next/head';
+import { unregisterServiceWorkersInDev } from '@/lib/devServiceWorker';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -11,6 +13,10 @@ import { Toaster } from 'react-hot-toast';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    void unregisterServiceWorkersInDev();
+  }, []);
+
   return (
     <>
       <SEO />

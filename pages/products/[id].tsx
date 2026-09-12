@@ -11,6 +11,7 @@ import { ProductCardGallery } from '@/components/ProductCardGallery';
 import { WristbandStorefrontFields } from '@/components/WristbandStorefrontFields';
 import { StorefrontColorSelect } from '@/components/StorefrontColorSelect';
 import { ProductAudienceBadge } from '@/components/ProductAudienceBadge';
+import { PriceWithTaxNote } from '@/components/PriceWithTaxNote';
 import { productService, Product } from '@/services/productService';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -303,6 +304,9 @@ export default function ProductView() {
                             Includes ${colorSurchargeAmount.toFixed(2)} color fee
                           </p>
                         )}
+                        <p className="w-full">
+                          <PriceWithTaxNote unitPrice={displayUnitPrice} />
+                        </p>
                       </div>
                     ) : (
                       <div>
@@ -315,6 +319,7 @@ export default function ProductView() {
                             {isWristband ? ' band' : ''} fee
                           </p>
                         )}
+                        <PriceWithTaxNote unitPrice={displayUnitPrice} />
                       </div>
                     )}
                   </div>

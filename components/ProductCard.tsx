@@ -5,6 +5,7 @@ import { ProductCardGallery } from '@/components/ProductCardGallery';
 import { ProductPurchaseActions } from '@/components/ProductPurchaseActions';
 import { ProductAudienceBadge } from '@/components/ProductAudienceBadge';
 import { productHref } from '@/lib/productRoutes';
+import { PriceWithTaxNote } from '@/components/PriceWithTaxNote';
 
 interface ProductCardProps {
   product: Product;
@@ -76,6 +77,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ${product.price.toFixed(2)}
               </span>
             )}
+            <PriceWithTaxNote unitPrice={product.salePrice ?? product.price} compact={compact} />
           </div>
 
           {showPurchaseActions && <ProductPurchaseActions product={product} compact={compact} />}

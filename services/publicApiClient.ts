@@ -7,7 +7,7 @@ import { getApiErrorMessage } from '@/lib/apiError';
  * Use for guest checkout, public guest order lookup, and checkout-status polling.
  */
 const publicApiClient = axios.create({
-  baseURL: getApiBaseUrl(),
+  baseURL: typeof window !== 'undefined' ? '/api' : getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },

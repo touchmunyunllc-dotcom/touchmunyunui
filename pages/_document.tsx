@@ -30,6 +30,12 @@ export default function Document() {
         <meta name="msapplication-TileColor" content="#5A5D68" />
       </Head>
       <body>
+        {/* One-time clear of production PWA cache on localhost (stale sw.js breaks Next dev HMR). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k='tm_dev_sw_cleared';if(sessionStorage.getItem(k))return;var h=location.hostname;if(h!=='localhost'&&h!=='127.0.0.1')return;if(!('serviceWorker'in navigator))return;navigator.serviceWorker.getRegistrations().then(function(regs){if(!regs.length)return;Promise.all(regs.map(function(r){return r.unregister();})).then(function(){var p=Promise.resolve();if('caches'in window){p=caches.keys().then(function(keys){return Promise.all(keys.map(function(key){return caches.delete(key);}));});}return p;}).then(function(){sessionStorage.setItem(k,'1');location.reload();});});}catch(e){}})();`,
+          }}
+        />
         <Main />
         <NextScript />
       </body>

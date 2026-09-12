@@ -1,10 +1,12 @@
 const { withSentryConfig } = require('@sentry/nextjs');
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: true,
+  register: isProd,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: !isProd,
   runtimeCaching: [
     {
       urlPattern: /^\/(?:api|_next|static)\/.*/,
@@ -37,6 +39,24 @@ function resolveApiBaseUrl(raw) {
 }
 
 const apiBaseUrl = resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
+
+/** Browser uses same-origin `/api`; include local HTTPS port if ASP.NET redirects HTTP→HTTPS in dev. */
+function cspConnectSrc() {
+  const parts = [
+    "'self'",
+    'https://api.stripe.com',
+    'https://*.sentry.io',
+    'https://*.ingest.sentry.io',
+    'https://www.google.com/recaptcha/',
+  ];
+  const isLocalApi = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(apiBaseUrl);
+  if (isLocalApi) {
+    parts.push(apiBaseUrl, 'https://localhost:59400', 'https://127.0.0.1:59400');
+  } else if (apiBaseUrl) {
+    parts.push(apiBaseUrl);
+  }
+  return parts.join(' ');
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -83,34 +103,35 @@ const nextConfig = {
     ];
   },
   async headers() {
-    return [
+    const headers = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-XSS-Protection', value: '1; mode=block' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
       {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.sentry.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com https://www.gstatic.com/recaptcha/",
-              "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://api.stripe.com https://*.sentry.io https://*.ingest.sentry.io https://www.google.com/recaptcha/ " + apiBaseUrl,
-              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com/recaptcha/ https://recaptcha.google.com/",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join('; ')
-          },
-        ],
+        key: 'Content-Security-Policy',
+        value: [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://*.sentry.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com https://www.gstatic.com/recaptcha/",
+          "font-src 'self' https://fonts.gstatic.com",
+          `connect-src ${cspConnectSrc()}`,
+          "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com/recaptcha/ https://recaptcha.google.com/",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join('; '),
       },
     ];
+    if (isProd) {
+      headers.splice(5, 0, {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      });
+    }
+    return [{ source: '/(.*)', headers }];
   },
 };
 
