@@ -16,6 +16,11 @@ import StripePaymentForm from '@/components/StripePaymentForm';
 import { SEO } from '@/components/SEO';
 import { CustomizationPolicyNotice } from '@/components/CustomizationPolicyNotice';
 import { ADMIN_SHOPPING_BLOCKED_MESSAGE, isAdminUser } from '@/lib/adminShopping';
+import { CountrySelect } from '@/components/CountrySelect';
+import { countryService, Country } from '@/services/countryService';
+import { postalCodePlaceholder, validatePostalCode } from '@/lib/postalCode';
+import { normalizePhoneNumber, phonePlaceholder, validatePhoneNumber } from '@/lib/phone';
+import { captureCheckoutGeo } from '@/lib/checkoutLocation';
 
 export default function Checkout() {
   const { isAuthenticated, user } = useAuth();
@@ -26,6 +31,7 @@ export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [shipping, setShipping] = useState(0);
   const [finalTotal, setFinalTotal] = useState(total);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'cod'>('stripe');
@@ -42,24 +48,42 @@ export default function Checkout() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('United States');
+  const [country, setCountry] = useState('US');
+  const [countries, setCountries] = useState<Country[]>([]);
   const [saveAddress, setSaveAddress] = useState(true);
 
   // Stripe payment state (order is created after payment succeeds)
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
-  /** Align tax/discount/total with server cart (same rules as payment validation). */
-  const syncCartTotals = useCallback(async (couponCodeArg?: string | null) => {
-    try {
-      const summary = await cartService.getCart(couponCodeArg || undefined);
-      setTax(summary.tax);
-      setDiscount(summary.discount);
-      setFinalTotal(summary.total);
-    } catch (e) {
-      console.error('Failed to sync cart totals', e);
+  const resolveShippingCountry = useCallback((): string | undefined => {
+    if (useNewAddress) {
+      return country.trim() || undefined;
     }
-  }, []);
+    const addr = savedAddresses.find((a) => a.id === selectedAddressId);
+    return addr?.country?.trim() || undefined;
+  }, [country, savedAddresses, selectedAddressId, useNewAddress]);
+
+  /** Align tax/discount/total with server cart (same rules as payment validation). */
+  const syncCartTotals = useCallback(
+    async (couponCodeArg?: string | null) => {
+      try {
+        const summary = await cartService.getCart(
+          couponCodeArg || undefined,
+          resolveShippingCountry()
+        );
+        setTax(summary.tax);
+        setShipping(summary.shipping ?? 0);
+        setDiscount(summary.discount);
+        setFinalTotal(summary.total);
+        setShowPaymentForm(false);
+        setClientSecret(null);
+      } catch (e) {
+        console.error('Failed to sync cart totals', e);
+      }
+    },
+    [resolveShippingCountry]
+  );
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -102,12 +126,31 @@ export default function Checkout() {
       }
     };
     loadAddresses();
+    countryService.list().then(setCountries).catch(() => setCountries([]));
   }, [items.length, isAuthenticated, router, user]);
+
+  useEffect(() => {
+    if (useNewAddress || !selectedAddressId) return;
+    const addr = savedAddresses.find((a) => a.id === selectedAddressId);
+    if (addr?.phone) {
+      setPhone(addr.phone);
+    }
+  }, [selectedAddressId, savedAddresses, useNewAddress]);
 
   useEffect(() => {
     if (!isAuthenticated || items.length === 0) return;
     void syncCartTotals(appliedCoupon?.code ?? null);
-  }, [isAuthenticated, items.length, total, appliedCoupon?.code, syncCartTotals]);
+  }, [
+    isAuthenticated,
+    items.length,
+    total,
+    appliedCoupon?.code,
+    syncCartTotals,
+    country,
+    selectedAddressId,
+    useNewAddress,
+    savedAddresses,
+  ]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -149,8 +192,9 @@ export default function Checkout() {
         notificationService.error('Please enter your email address');
         return undefined;
       }
-      if (!phone.trim()) {
-        notificationService.error('Please enter your phone number');
+      const phoneError = validatePhoneNumber(phone, country);
+      if (phoneError) {
+        notificationService.error(phoneError);
         return undefined;
       }
       if (!addressLine1.trim()) {
@@ -165,12 +209,13 @@ export default function Checkout() {
         notificationService.error('Please enter your state/province');
         return undefined;
       }
-      if (!postalCode.trim()) {
-        notificationService.error('Please enter your ZIP/postal code');
-        return undefined;
-      }
       if (!country.trim()) {
         notificationService.error('Please select your country');
+        return undefined;
+      }
+      const postalError = validatePostalCode(postalCode, country);
+      if (postalError) {
+        notificationService.error(postalError);
         return undefined;
       }
 
@@ -182,7 +227,7 @@ export default function Checkout() {
           state: state.trim(),
           postalCode: postalCode.trim(),
           country: country.trim(),
-          phone: phone.trim(),
+          phone: normalizePhoneNumber(phone, country) ?? phone.trim(),
           isDefault: saveAddress && savedAddresses.length === 0,
         });
         shippingAddressId = newAddress.id;
@@ -194,6 +239,25 @@ export default function Checkout() {
       if (!selectedAddressId) {
         notificationService.error('Please select a shipping address');
         return undefined;
+      }
+      const selected = savedAddresses.find((a) => a.id === selectedAddressId);
+      const phoneCountry = selected?.country?.trim() || country;
+      const phoneError = validatePhoneNumber(phone, phoneCountry);
+      if (phoneError) {
+        notificationService.error(phoneError);
+        return undefined;
+      }
+      const normalizedPhone = normalizePhoneNumber(phone, phoneCountry) ?? phone.trim();
+      if (selected && (selected.phone?.trim() ?? '') !== normalizedPhone) {
+        try {
+          await addressService.updateAddress(selectedAddressId, { phone: normalizedPhone });
+          setSavedAddresses((prev) =>
+            prev.map((a) => (a.id === selectedAddressId ? { ...a, phone: normalizedPhone } : a))
+          );
+        } catch {
+          notificationService.error('Failed to save mobile number on your address.');
+          return undefined;
+        }
       }
       shippingAddressId = selectedAddressId;
     }
@@ -207,13 +271,15 @@ export default function Checkout() {
 
     setLoading(true);
     try {
+      const geo = await captureCheckoutGeo();
       if (paymentMethod === 'cod') {
         console.log('Creating COD order...', { finalTotal, couponCode: appliedCoupon?.code, shippingAddressId });
         const result = await stripeService.createCodOrder(
           finalTotal,
           'usd',
           appliedCoupon?.code,
-          shippingAddressId
+          shippingAddressId,
+          geo
         );
 
         console.log('COD order created:', result);
@@ -224,7 +290,8 @@ export default function Checkout() {
           finalTotal,
           'usd',
           appliedCoupon?.code,
-          shippingAddressId
+          shippingAddressId,
+          geo
         );
 
         setClientSecret(paymentIntent.clientSecret);
@@ -251,9 +318,12 @@ export default function Checkout() {
 
     setLoading(true);
     try {
+      const geo = await captureCheckoutGeo();
       const { url } = await stripeService.createCheckoutSession(
         appliedCoupon?.code,
-        shippingAddressId
+        shippingAddressId,
+        'usd',
+        geo
       );
       window.location.href = url;
     } catch (error: any) {
@@ -339,7 +409,11 @@ export default function Checkout() {
 
             {/* Shipping Address */}
             <div className="bg-primary/80 backdrop-blur-md rounded-2xl shadow-glass-lg p-6 border border-foreground/20">
-              <h2 className="text-2xl font-semibold text-foreground mb-4">Shipping Address</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-1">Shipping Address</h2>
+              <p className="text-xs text-foreground/55 mb-4">
+                When you place the order, we may record your shipping location on a map and, if you allow it, where
+                you are placing the order from.
+              </p>
 
               {/* Saved Addresses */}
               {savedAddresses.length > 0 && (
@@ -379,7 +453,9 @@ export default function Checkout() {
                           <div className="text-sm text-foreground/70">
                             {addr.city}, {addr.state} {addr.postalCode}
                           </div>
-                          <div className="text-sm text-foreground/70">{addr.country}</div>
+                          <div className="text-sm text-foreground/70">
+                            {countryService.countryName(addr.country, countries) || addr.country}
+                          </div>
                           {addr.phone && (
                             <div className="text-sm text-foreground/70">Phone: {addr.phone}</div>
                           )}
@@ -405,6 +481,27 @@ export default function Checkout() {
                       </div>
                     </label>
                   </div>
+                </div>
+              )}
+
+              {!useNewAddress && savedAddresses.length > 0 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Mobile number <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={phonePlaceholder(
+                      savedAddresses.find((a) => a.id === selectedAddressId)?.country || country
+                    )}
+                    autoComplete="tel"
+                    className="w-full px-4 py-2 border border-foreground/20 rounded-lg bg-primary/60 backdrop-blur-sm text-foreground placeholder-foreground/50 focus:ring-2 focus:ring-button/50 focus:border-button/50 focus:bg-primary outline-none transition-all touch-manipulation"
+                  />
+                  <p className="text-xs text-foreground/60 mt-1">
+                    Used for delivery updates and order notifications.
+                  </p>
                 </div>
               )}
 
@@ -442,13 +539,14 @@ export default function Checkout() {
                   {/* Phone */}
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Phone Number <span className="text-red-400">*</span>
+                      Mobile number <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 123-4567"
+                      placeholder={phonePlaceholder(country)}
+                      autoComplete="tel"
                       className="w-full px-4 py-2 border border-foreground/20 rounded-lg bg-primary/60 backdrop-blur-sm text-foreground placeholder-foreground/50 focus:ring-2 focus:ring-button/50 focus:border-button/50 focus:bg-primary outline-none transition-all"
                     />
                   </div>
@@ -519,7 +617,9 @@ export default function Checkout() {
                         type="text"
                         value={postalCode}
                         onChange={(e) => setPostalCode(e.target.value)}
-                        placeholder="10001"
+                        placeholder={postalCodePlaceholder(country)}
+                        autoComplete="postal-code"
+                        maxLength={20}
                         className="w-full px-4 py-2 border border-foreground/20 rounded-lg bg-primary/60 backdrop-blur-sm text-foreground placeholder-foreground/50 focus:ring-2 focus:ring-button/50 focus:border-button/50 focus:bg-primary outline-none transition-all"
                       />
                     </div>
@@ -527,32 +627,12 @@ export default function Checkout() {
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Country <span className="text-red-400">*</span>
                       </label>
-                      <select
+                      <CountrySelect
                         value={country}
-                        onChange={(e) => setCountry(e.target.value)}
+                        onChange={setCountry}
                         className="w-full px-4 py-2 border border-foreground/20 rounded-lg bg-primary/60 backdrop-blur-sm text-foreground focus:ring-2 focus:ring-button/50 focus:border-button/50 focus:bg-primary outline-none transition-all"
-                      >
-                        <option value="United States">United States</option>
-                        <option value="Canada">Canada</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Australia">Australia</option>
-                        <option value="India">India</option>
-                        <option value="Germany">Germany</option>
-                        <option value="France">France</option>
-                        <option value="Japan">Japan</option>
-                        <option value="Brazil">Brazil</option>
-                        <option value="Mexico">Mexico</option>
-                        <option value="South Korea">South Korea</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="United Arab Emirates">United Arab Emirates</option>
-                        <option value="Saudi Arabia">Saudi Arabia</option>
-                        <option value="South Africa">South Africa</option>
-                        <option value="Nigeria">Nigeria</option>
-                        <option value="New Zealand">New Zealand</option>
-                        <option value="Italy">Italy</option>
-                        <option value="Spain">Spain</option>
-                        <option value="Netherlands">Netherlands</option>
-                      </select>
+                        required
+                      />
                     </div>
                   </div>
 
@@ -610,6 +690,12 @@ export default function Checkout() {
                 <div className="flex justify-between text-foreground/70">
                   <span>Subtotal</span>
                   <span className="text-foreground">${total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-foreground/70">
+                  <span>Shipping</span>
+                  <span className="text-foreground">
+                    {shipping > 0 ? `$${shipping.toFixed(2)}` : 'Enter address'}
+                  </span>
                 </div>
                 <div className="flex justify-between text-foreground/70">
                   <span>Tax (10%)</span>

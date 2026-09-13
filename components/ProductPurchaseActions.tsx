@@ -34,7 +34,7 @@ export function ProductPurchaseActions({ product, compact = false }: ProductPurc
 
   const goToProductPage = () => {
     notificationService.success('Choose band color, number, and writing color on the product page');
-    router.push(productHref(product.id));
+    router.push(productHref(product));
   };
 
   const ensureCanPurchase = () => {

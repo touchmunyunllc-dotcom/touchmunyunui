@@ -34,6 +34,10 @@ function formatOrderDate(value: string) {
   });
 }
 
+function orderLocationMismatch(order: any): boolean {
+  return Boolean(order.locationMismatchFlag ?? order.LocationMismatchFlag);
+}
+
 function getCustomerLabel(order: any) {
   const name = order.userName || order.guestName || 'Guest';
   const email = order.userEmail || order.guestEmail;
@@ -189,7 +193,17 @@ export const OrderList: React.FC<OrderListProps> = ({
                   onClick={() => onOrderClick?.(order.id)}
                 >
                   <td className={`${adminGridCellCompactClassName} whitespace-nowrap font-semibold`}>
-                    #{order.orderCode || order.id.slice(0, 8)}
+                    <span className="inline-flex items-center gap-1.5 flex-wrap">
+                      #{order.orderCode || order.id.slice(0, 8)}
+                      {orderLocationMismatch(order) && (
+                        <span
+                          className="inline-flex rounded-full bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200"
+                          title="Checkout location far from ship-to address"
+                        >
+                          Loc ⚠
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td className={`${adminGridCellCompactClassName} max-w-[200px] truncate text-foreground/80`} title={getCustomerLabel(order)}>
                     {getCustomerLabel(order)}
@@ -243,8 +257,13 @@ export const OrderList: React.FC<OrderListProps> = ({
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-foreground truncate">
+                  <p className="font-semibold text-foreground truncate inline-flex items-center gap-1.5 flex-wrap">
                     #{order.orderCode || order.id.slice(0, 8)}
+                    {orderLocationMismatch(order) && (
+                      <span className="rounded-full bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200">
+                        Loc ⚠
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-foreground/60 truncate">{getCustomerLabel(order)}</p>
                 </div>

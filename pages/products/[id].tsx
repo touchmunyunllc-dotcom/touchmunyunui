@@ -17,17 +17,26 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { notificationService } from '@/services/notificationService';
 import { useProductCustomization } from '@/hooks/useProductCustomization';
-import { productHref, productsListHref } from '@/lib/productRoutes';
+import {
+  isProductGuidSegment,
+  productHref,
+  productsListHref,
+} from '@/lib/productRoutes';
+import type { GetServerSideProps } from 'next';
 import { ADMIN_SHOPPING_BLOCKED_MESSAGE, isAdminUser } from '@/lib/adminShopping';
 import {
   colorNameToHex,
   getCartLineOptions,
   isWristbandProduct,
 } from '@/services/productCustomizationService';
+import {
+  displayProductDescription,
+  productDescriptionForSeo,
+} from '@/lib/productDescription';
 
 export default function ProductView() {
   const router = useRouter();
-  const { id } = router.query;
+  const segment = router.query.slug ?? router.query.id;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -57,11 +66,19 @@ export default function ProductView() {
   } = useProductCustomization(product, items);
 
   useEffect(() => {
-    if (id) {
+    if (segment) {
       const fetchProduct = async () => {
         try {
-          const data = await productService.getById(id as string);
+          const data = await productService.getByPublicId(segment as string);
           setProduct(data);
+          if (
+            data.slug &&
+            typeof segment === 'string' &&
+            isProductGuidSegment(segment) &&
+            data.slug !== segment
+          ) {
+            router.replace(productHref(data), undefined, { shallow: false });
+          }
         } catch {
           notificationService.error('Failed to load product');
           router.push(productsListHref);
@@ -71,7 +88,7 @@ export default function ProductView() {
       };
       fetchProduct();
     }
-  }, [id, router]);
+  }, [segment, router]);
 
   useEffect(() => {
     setQuantity(matchingCartItem?.quantity ?? 1);
@@ -196,19 +213,17 @@ export default function ProductView() {
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://touchmunyun.com';
-  const productUrl = `${siteUrl}${productHref(product.id)}`;
+  const productUrl = `${siteUrl}${productHref(product)}`;
   const previewInk = colorNameToHex(writingColor);
   const hasColors = (product.colors?.length ?? 0) > 0;
   const hasSizes = (product.sizes?.length ?? 0) > 0;
+  const customerDescription = displayProductDescription(product.description);
 
   return (
     <>
       <SEO
         title={`${product.name} - Touch Munyun | Performance Accessories & Apparel`}
-        description={
-          product.description ||
-          `View ${product.name} at Touch Munyun. Performance accessories and apparel for athletes and grinders.`
-        }
+        description={productDescriptionForSeo(product)}
         keywords={`${product.name}, ${product.category}, Touch Munyun, sports accessories, performance apparel`}
         image={displayImage}
         type="product"
@@ -220,7 +235,7 @@ export default function ProductView() {
           '@context': 'https://schema.org',
           '@type': 'Product',
           name: product.name,
-          description: product.description,
+          description: customerDescription ?? productDescriptionForSeo(product),
           image: displayImage,
           brand: { '@type': 'Brand', name: 'Touch Munyun' },
           category: product.category,
@@ -268,9 +283,11 @@ export default function ProductView() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 [&>*]:min-w-0">
               <div className="group relative min-w-0">
                 <ProductCardGallery
+                  key={`${product.id}-${selectedColor ?? 'default'}`}
                   product={product}
                   variant="detail"
                   activeImageUrl={displayImage}
+                  selectedColor={selectedColor}
                 />
                 {isWristband && customNumber.trim() && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -340,10 +357,12 @@ export default function ProductView() {
                   </div>
                 </div>
 
-                <div>
-                  <h2 className="text-lg font-semibold text-white mb-2">Description</h2>
-                  <p className="text-white/70 leading-relaxed">{product.description}</p>
-                </div>
+                {customerDescription && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-white mb-2">Description</h2>
+                    <p className="text-white/70 leading-relaxed">{customerDescription}</p>
+                  </div>
+                )}
 
                 {hasColors && !isWristband && (
                   <div className="space-y-2">
@@ -513,3 +532,33 @@ export default function ProductView() {
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const slugParam = context.params?.slug ?? context.params?.id;
+  const segment = typeof slugParam === 'string' ? slugParam : undefined;
+  if (!segment || !isProductGuidSegment(segment)) {
+    return { props: {} };
+  }
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:59401';
+  try {
+    const res = await fetch(`${apiBase}/api/products/${encodeURIComponent(segment)}`);
+    if (!res.ok) {
+      return { props: {} };
+    }
+    const product = await res.json();
+    const canonicalSlug = (product.slug ?? product.Slug) as string | undefined;
+    if (canonicalSlug && canonicalSlug !== segment) {
+      return {
+        redirect: {
+          destination: `/products/${canonicalSlug}`,
+          permanent: true,
+        },
+      };
+    }
+  } catch {
+    // Client fetch will handle errors.
+  }
+
+  return { props: {} };
+};

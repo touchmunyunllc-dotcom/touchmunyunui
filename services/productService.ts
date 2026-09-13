@@ -2,6 +2,8 @@ import apiClient from './apiClient';
 
 export interface Product {
   id: string;
+  /** Storefront URL segment (letters, digits, hyphens). */
+  slug?: string;
   name: string;
   description: string;
   price: number;
@@ -73,9 +75,17 @@ export const productService = {
     return response.data;
   },
 
-  async getById(id: string): Promise<Product> {
-    const response = await apiClient.get<Product>(`/products/${id}`);
+  /** Load by public slug or legacy GUID (API accepts both). */
+  async getByPublicId(publicId: string): Promise<Product> {
+    const response = await apiClient.get<Product>(
+      `/products/${encodeURIComponent(publicId)}`
+    );
     return response.data;
+  },
+
+  /** @deprecated Prefer getByPublicId with slug from productHref. */
+  async getById(id: string): Promise<Product> {
+    return this.getByPublicId(id);
   },
 
   async create(product: {

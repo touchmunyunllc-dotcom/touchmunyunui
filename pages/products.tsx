@@ -357,13 +357,13 @@ export default function Products() {
                       className="group bg-white/5 rounded-xl hover:bg-white/[0.07] transition-colors p-3 sm:p-4 flex flex-col sm:flex-row gap-3 border border-white/10"
                     >
                       <Link
-                        href={productHref(product.id)}
+                        href={productHref(product)}
                         className="relative w-full sm:w-28 shrink-0 rounded-lg overflow-hidden block"
                       >
                         <ProductCardGallery product={product} variant="list" showDots={false} />
                       </Link>
                       <div className="flex-1 min-w-0 flex flex-col">
-                        <Link href={productHref(product.id)} className="block min-w-0">
+                        <Link href={productHref(product)} className="block min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 mb-1">

@@ -16,6 +16,10 @@ import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '@/components/StripePaymentForm';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { dedupeGuestCartLines } from '@/services/productCustomizationService';
+import { CountrySelect } from '@/components/CountrySelect';
+import { postalCodePlaceholder, validatePostalCode } from '@/lib/postalCode';
+import { normalizePhoneNumber, phonePlaceholder, validatePhoneNumber } from '@/lib/phone';
+import { captureCheckoutGeo } from '@/lib/checkoutLocation';
 
 const CURRENCY = 'usd';
 
@@ -32,12 +36,13 @@ export default function GuestCheckoutPage() {
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [city, setCity] = useState('');
   const [stateVal, setStateVal] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('United States');
+  const [country, setCountry] = useState('US');
   const [couponCode, setCouponCode] = useState('');
   const couponRef = useRef(couponCode);
   useEffect(() => {
@@ -75,7 +80,8 @@ export default function GuestCheckoutPage() {
     try {
       const p = await guestService.previewTotal(
         mapItems(),
-        couponRef.current.trim() || undefined
+        couponRef.current.trim() || undefined,
+        country.trim() || undefined
       );
       setPreview(p);
     } catch (e) {
@@ -84,7 +90,7 @@ export default function GuestCheckoutPage() {
     } finally {
       setPreviewLoading(false);
     }
-  }, [cartLines, mapItems]);
+  }, [cartLines, mapItems, country]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -104,6 +110,11 @@ export default function GuestCheckoutPage() {
     void runPreview();
   }, [router.isReady, isAuthenticated, cartLines.length, router, runPreview, ensureGuestCartLoaded]);
 
+  useEffect(() => {
+    if (cartLines.length === 0) return;
+    void runPreview();
+  }, [country, cartLines.length, runPreview]);
+
   const validateShipping = (): boolean => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       notificationService.error('Valid email is required');
@@ -113,8 +124,18 @@ export default function GuestCheckoutPage() {
       notificationService.error('Name is required');
       return false;
     }
-    if (!addressLine1.trim() || !city.trim() || !stateVal.trim() || !postalCode.trim() || !country.trim()) {
+    const phoneError = validatePhoneNumber(phone, country);
+    if (phoneError) {
+      notificationService.error(phoneError);
+      return false;
+    }
+    if (!addressLine1.trim() || !city.trim() || !stateVal.trim() || !country.trim()) {
       notificationService.error('Please complete the shipping address');
+      return false;
+    }
+    const postalError = validatePostalCode(postalCode, country);
+    if (postalError) {
+      notificationService.error(postalError);
       return false;
     }
     return true;
@@ -129,10 +150,12 @@ export default function GuestCheckoutPage() {
 
     setSubmitLoading(true);
     try {
+      const geo = await captureCheckoutGeo();
       const captchaToken = await executeRecaptcha('guest_checkout');
       const latest = await guestService.previewTotal(
         mapItems(),
-        couponRef.current.trim() || undefined
+        couponRef.current.trim() || undefined,
+        country.trim()
       );
       setPreview(latest);
 
@@ -144,6 +167,8 @@ export default function GuestCheckoutPage() {
         currency: CURRENCY,
         couponCode: couponRef.current.trim() || undefined,
         captchaToken,
+        checkoutLatitude: geo.checkoutLatitude,
+        checkoutLongitude: geo.checkoutLongitude,
         shippingAddress: {
           addressLine1: addressLine1.trim(),
           addressLine2: addressLine2.trim() || undefined,
@@ -151,6 +176,7 @@ export default function GuestCheckoutPage() {
           state: stateVal.trim(),
           postalCode: postalCode.trim(),
           country: country.trim(),
+          phone: normalizePhoneNumber(phone, country) ?? phone.trim(),
         },
       });
 
@@ -191,7 +217,10 @@ export default function GuestCheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-primary/80 rounded-2xl shadow-lg p-6 border border-foreground/20">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Contact & shipping</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Contact & shipping</h2>
+              <p className="text-xs text-foreground/55 mb-4">
+                We geocode your shipping address and may ask to use your device location when you pay (optional).
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="block">
                   <span className="text-sm text-foreground/80">Email</span>
@@ -211,6 +240,19 @@ export default function GuestCheckoutPage() {
                     onChange={(e) => setName(e.target.value)}
                     className="mt-1 w-full rounded-lg bg-primary/60 border border-foreground/20 px-3 py-2 text-foreground"
                     autoComplete="name"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm text-foreground/80">
+                    Mobile number <span className="text-red-400">*</span>
+                  </span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={phonePlaceholder(country)}
+                    autoComplete="tel"
+                    className="mt-1 w-full rounded-lg bg-primary/60 border border-foreground/20 px-3 py-2 text-foreground"
                   />
                 </label>
                 <label className="md:col-span-2 block">
@@ -255,16 +297,19 @@ export default function GuestCheckoutPage() {
                     type="text"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder={postalCodePlaceholder(country)}
+                    autoComplete="postal-code"
+                    maxLength={20}
                     className="mt-1 w-full rounded-lg bg-primary/60 border border-foreground/20 px-3 py-2 text-foreground"
                   />
                 </label>
                 <label className="block">
                   <span className="text-sm text-foreground/80">Country</span>
-                  <input
-                    type="text"
+                  <CountrySelect
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    onChange={setCountry}
                     className="mt-1 w-full rounded-lg bg-primary/60 border border-foreground/20 px-3 py-2 text-foreground"
+                    required
                   />
                 </label>
               </div>
@@ -344,6 +389,10 @@ export default function GuestCheckoutPage() {
                   <div className="flex justify-between">
                     <span>Subtotal</span>
                     <span>${preview.subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Shipping</span>
+                    <span>${(preview.shipping ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax (10%)</span>

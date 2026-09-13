@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Layout } from '@/components/Layout';
@@ -11,6 +12,37 @@ import { Pagination } from '@/components/Pagination';
 import apiClient from '@/services/apiClient';
 import { adminSelectClassName, adminSelectOptionProps } from '@/lib/adminFormStyles';
 import { adminDashboardHref, getAdminReturnTab, getAdminBackLabel } from '@/lib/adminDashboard';
+import { mapsLink } from '@/lib/checkoutLocation';
+import { haversineKm } from '@/lib/geoDistance';
+
+const OrderLocationMap = dynamic(() => import('@/components/admin/OrderLocationMap'), { ssr: false });
+
+function orderLocationMismatch(order: AdminOrder): boolean {
+  const raw = order.locationMismatchFlag ?? (order as { LocationMismatchFlag?: boolean }).LocationMismatchFlag;
+  return Boolean(raw);
+}
+
+function orderLocationDistanceKm(order: AdminOrder): number | null {
+  const raw =
+    order.locationDistanceKm ?? (order as { LocationDistanceKm?: number }).LocationDistanceKm;
+  if (raw != null && !Number.isNaN(Number(raw))) {
+    return Number(raw);
+  }
+  if (
+    order.shippingLatitude != null &&
+    order.shippingLongitude != null &&
+    order.checkoutLatitude != null &&
+    order.checkoutLongitude != null
+  ) {
+    return haversineKm(
+      order.shippingLatitude,
+      order.shippingLongitude,
+      order.checkoutLatitude,
+      order.checkoutLongitude
+    );
+  }
+  return null;
+}
 
 interface AdminOrder {
   id: string;
@@ -29,6 +61,12 @@ interface AdminOrder {
   notes?: string;
   cancellationReason?: string;
   shippingAddress?: string;
+  shippingLatitude?: number;
+  shippingLongitude?: number;
+  checkoutLatitude?: number;
+  checkoutLongitude?: number;
+  locationDistanceKm?: number;
+  locationMismatchFlag?: boolean;
   createdAt: string;
   updatedAt?: string;
   orderItems?: Array<{
@@ -435,6 +473,83 @@ export default function AdminOrders() {
                     <p className="font-semibold text-foreground">{selectedOrder.shippingAddress}</p>
                   </div>
                 )}
+                {(selectedOrder.shippingLatitude != null && selectedOrder.shippingLongitude != null) ||
+                (selectedOrder.checkoutLatitude != null && selectedOrder.checkoutLongitude != null) ? (
+                  <div className="bg-primary/60 backdrop-blur-sm rounded-xl p-4 border border-foreground/10 md:col-span-2 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">Order location</p>
+                      {orderLocationMismatch(selectedOrder) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+                          Location mismatch
+                        </span>
+                      )}
+                    </div>
+                    {orderLocationMismatch(selectedOrder) && (
+                      <p className="text-sm text-amber-100/90 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-2">
+                        Checkout device location is far from the geocoded shipping address. Review before fulfilling
+                        high-value or international orders.
+                      </p>
+                    )}
+                    {(() => {
+                      const distanceKm = orderLocationDistanceKm(selectedOrder);
+                      if (distanceKm == null) return null;
+                      return (
+                        <p className="text-sm text-foreground/80">
+                          Distance ship-to ↔ checkout:{' '}
+                          <span className="font-semibold tabular-nums">{distanceKm.toFixed(1)} km</span>
+                        </p>
+                      );
+                    })()}
+                    <OrderLocationMap
+                      shipping={
+                        selectedOrder.shippingLatitude != null && selectedOrder.shippingLongitude != null
+                          ? {
+                              lat: selectedOrder.shippingLatitude,
+                              lng: selectedOrder.shippingLongitude,
+                              label: 'Ship-to (geocoded address)',
+                            }
+                          : null
+                      }
+                      checkout={
+                        selectedOrder.checkoutLatitude != null && selectedOrder.checkoutLongitude != null
+                          ? {
+                              lat: selectedOrder.checkoutLatitude,
+                              lng: selectedOrder.checkoutLongitude,
+                              label: 'Checkout (device)',
+                            }
+                          : null
+                      }
+                    />
+                    <ul className="space-y-2 text-sm">
+                      {selectedOrder.shippingLatitude != null && selectedOrder.shippingLongitude != null && (
+                        <li>
+                          <span className="text-foreground/70">Ship-to (geocoded address): </span>
+                          <a
+                            href={mapsLink(selectedOrder.shippingLatitude, selectedOrder.shippingLongitude)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-button hover:underline font-medium"
+                          >
+                            {selectedOrder.shippingLatitude.toFixed(5)}, {selectedOrder.shippingLongitude.toFixed(5)}
+                          </a>
+                        </li>
+                      )}
+                      {selectedOrder.checkoutLatitude != null && selectedOrder.checkoutLongitude != null && (
+                        <li>
+                          <span className="text-foreground/70">Checkout started from (device): </span>
+                          <a
+                            href={mapsLink(selectedOrder.checkoutLatitude, selectedOrder.checkoutLongitude)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-button hover:underline font-medium"
+                          >
+                            {selectedOrder.checkoutLatitude.toFixed(5)}, {selectedOrder.checkoutLongitude.toFixed(5)}
+                          </a>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                ) : null}
                 {selectedOrder.trackingNumber && (
                   <div className="bg-primary/60 backdrop-blur-sm rounded-xl p-4 border border-foreground/10">
                     <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide mb-1">Tracking Number</p>

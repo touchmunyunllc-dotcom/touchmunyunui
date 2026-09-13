@@ -1,2 +1,2 @@
-/** Legacy route — product detail lives at /products/[id]. Sizes are text (XS–XL). */
-export { default } from '../products/[id]';
+/** Legacy /product/:id — product detail is at /products/:slug */
+export { default, getServerSideProps } from '../products/[id]';

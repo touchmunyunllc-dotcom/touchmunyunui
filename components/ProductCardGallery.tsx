@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Product } from '@/services/productService';
 import {
+  getDetailGalleryImages,
   getProductGalleryImages,
   resolveProductImageStyle,
 } from '@/services/productCustomizationService';
@@ -13,6 +14,8 @@ interface ProductCardGalleryProps {
   variant?: 'grid' | 'list' | 'detail';
   showDots?: boolean;
   activeImageUrl?: string;
+  /** When set on the PDP, slideshow excludes other colors' photos. */
+  selectedColor?: string;
 }
 
 export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
@@ -21,32 +24,51 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
   variant = 'grid',
   showDots = true,
   activeImageUrl,
+  selectedColor,
 }) => {
-  const images = useMemo(() => getProductGalleryImages(product), [product]);
+  const images = useMemo(() => {
+    if (variant === 'detail') {
+      return getDetailGalleryImages(product, selectedColor);
+    }
+    return getProductGalleryImages(product);
+  }, [product, variant, selectedColor]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const imageStyle = resolveProductImageStyle(product.imageObjectPosition);
   const hasMultiple = images.length > 1;
+  const hasColorVariants =
+    variant === 'detail' &&
+    Boolean(selectedColor && product.colorImages && Object.keys(product.colorImages).length > 0);
+
+  const visibleIndex = useMemo(() => {
+    if (variant === 'detail' && activeImageUrl?.trim()) {
+      const target = activeImageUrl.trim();
+      const match = images.findIndex((src) => src.trim() === target);
+      if (match >= 0) return match;
+    }
+    return index;
+  }, [variant, activeImageUrl, images, index]);
 
   useEffect(() => {
     setIndex(0);
-  }, [product.id]);
+  }, [product.id, selectedColor]);
 
   useEffect(() => {
-    if (!activeImageUrl) return;
-    const matchIndex = images.findIndex((src) => src === activeImageUrl);
+    if (!activeImageUrl?.trim()) return;
+    const target = activeImageUrl.trim();
+    const matchIndex = images.findIndex((src) => src.trim() === target);
     if (matchIndex >= 0) setIndex(matchIndex);
   }, [activeImageUrl, images]);
 
   useEffect(() => {
-    if (!hasMultiple || paused) return;
+    if (!hasMultiple || paused || hasColorVariants) return;
 
     const timer = window.setInterval(() => {
       setIndex((current) => (current + 1) % images.length);
     }, 4000);
 
     return () => clearInterval(timer);
-  }, [hasMultiple, images.length, paused, product.id]);
+  }, [hasMultiple, hasColorVariants, images.length, paused, product.id]);
 
   const goTo = (nextIndex: number, event?: React.MouseEvent) => {
     event?.preventDefault();
@@ -91,14 +113,14 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
           sizes={imageSizes}
           priority={imageIndex === 0 && variant === 'detail'}
           className={`absolute inset-0 w-full h-full ${imageFitClass} transition-opacity duration-700 ${
-            imageIndex === index ? 'opacity-100' : 'opacity-0'
+            imageIndex === visibleIndex ? 'opacity-100' : 'opacity-0'
           } ${variant === 'detail' ? '' : 'transition-transform duration-500'}`}
         />
       ))}
 
       {hasMultiple && (
         <span className="absolute top-2 right-2 z-10 rounded-full bg-black/65 px-1.5 py-0.5 text-[10px] font-medium text-white pointer-events-none">
-          {index + 1}/{images.length}
+          {visibleIndex + 1}/{images.length}
         </span>
       )}
 
@@ -106,7 +128,7 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
         <>
           <button
             type="button"
-            onClick={(e) => goTo(index - 1, e)}
+            onClick={(e) => goTo(visibleIndex - 1, e)}
             aria-label="Previous image"
             className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2 sm:p-1 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/75 touch-manipulation"
           >
@@ -116,7 +138,7 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
           </button>
           <button
             type="button"
-            onClick={(e) => goTo(index + 1, e)}
+            onClick={(e) => goTo(visibleIndex + 1, e)}
             aria-label="Next image"
             className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2 sm:p-1 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-black/75 touch-manipulation"
           >
@@ -138,7 +160,7 @@ export const ProductCardGallery: React.FC<ProductCardGalleryProps> = ({
               aria-label={`Show image ${dotIndex + 1}`}
               onClick={(e) => goTo(dotIndex, e)}
               className={`rounded-full transition-all touch-manipulation p-1 -m-1 ${
-                dotIndex === index
+                dotIndex === visibleIndex
                   ? compact
                     ? 'h-1 w-3 bg-white'
                     : 'h-1.5 w-3.5 bg-white'

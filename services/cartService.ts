@@ -19,6 +19,7 @@ export interface CartSummary {
   items: CartItem[];
   subtotal: number;
   tax: number;
+  shipping: number;
   discount: number;
   total: number;
   appliedCoupon?: {
@@ -52,8 +53,10 @@ export const cartService = {
     await apiClient.delete(`/cart/remove/${itemId}`);
   },
 
-  async getCart(couponCode?: string): Promise<CartSummary> {
-    const params = couponCode ? { couponCode } : {};
+  async getCart(couponCode?: string, shippingCountry?: string): Promise<CartSummary> {
+    const params: Record<string, string> = {};
+    if (couponCode) params.couponCode = couponCode;
+    if (shippingCountry?.trim()) params.shippingCountry = shippingCountry.trim();
     const response = await apiClient.get<CartSummary>('/cart/view', { params });
     return response.data;
   },
@@ -62,10 +65,14 @@ export const cartService = {
     await apiClient.put(`/cart/item/${itemId}`, { quantity });
   },
 
-  async applyCoupon(couponCode: string): Promise<CartSummary> {
-    const response = await apiClient.post<CartSummary>('/cart/apply-coupon', {
-      couponCode,
-    });
+  async applyCoupon(couponCode: string, shippingCountry?: string): Promise<CartSummary> {
+    const params: Record<string, string> = {};
+    if (shippingCountry?.trim()) params.shippingCountry = shippingCountry.trim();
+    const response = await apiClient.post<CartSummary>(
+      '/cart/apply-coupon',
+      { couponCode },
+      { params }
+    );
     return response.data;
   },
 

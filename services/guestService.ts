@@ -14,6 +14,7 @@ export interface GuestOrderItemPayload {
 export interface GuestCheckoutPreview {
   subtotal: number;
   tax: number;
+  shipping: number;
   totalAmount: number;
   couponApplied: boolean;
 }
@@ -26,6 +27,8 @@ export interface GuestCheckoutPayload {
   currency: string;
   couponCode?: string;
   captchaToken: string | null;
+  checkoutLatitude?: number;
+  checkoutLongitude?: number;
   shippingAddress: {
     addressLine1: string;
     addressLine2?: string;
@@ -33,6 +36,7 @@ export interface GuestCheckoutPayload {
     state: string;
     postalCode: string;
     country: string;
+    phone: string;
   };
 }
 
@@ -71,10 +75,15 @@ export interface GuestOrderDetail {
 }
 
 export const guestService = {
-  async previewTotal(items: GuestOrderItemPayload[], couponCode?: string): Promise<GuestCheckoutPreview> {
+  async previewTotal(
+    items: GuestOrderItemPayload[],
+    couponCode?: string,
+    shippingCountry?: string
+  ): Promise<GuestCheckoutPreview> {
     const response = await publicApiClient.post<GuestCheckoutPreview>('/guest/preview-total', {
       items,
       couponCode: couponCode || null,
+      shippingCountry: shippingCountry?.trim() || null,
     });
     return response.data;
   },

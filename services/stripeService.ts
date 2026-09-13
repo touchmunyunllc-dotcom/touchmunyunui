@@ -1,5 +1,6 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import apiClient from './apiClient';
+import type { CheckoutGeo } from '@/lib/checkoutLocation';
 
 let stripePromise: Promise<Stripe | null>;
 
@@ -29,10 +30,21 @@ export interface ResolveCheckoutSessionResult {
 
 export const stripeService = {
   /** Server builds cart total; redirects to Stripe Hosted Checkout. */
-  async createCheckoutSession(couponCode?: string, shippingAddressId?: string, currency?: string) {
+  async createCheckoutSession(
+    couponCode?: string,
+    shippingAddressId?: string,
+    currency?: string,
+    geo?: CheckoutGeo
+  ) {
     const response = await apiClient.post<{ sessionId: string; url: string }>(
       '/payments/create-checkout-session',
-      { couponCode, shippingAddressId, currency: currency || 'usd' }
+      {
+        couponCode,
+        shippingAddressId,
+        currency: currency || 'usd',
+        checkoutLatitude: geo?.checkoutLatitude,
+        checkoutLongitude: geo?.checkoutLongitude,
+      }
     );
     return response.data;
   },
@@ -44,12 +56,20 @@ export const stripeService = {
     return response.data;
   },
 
-  async createPaymentIntent(amount: number, currency: string = 'usd', couponCode?: string, shippingAddressId?: string) {
+  async createPaymentIntent(
+    amount: number,
+    currency: string = 'usd',
+    couponCode?: string,
+    shippingAddressId?: string,
+    geo?: CheckoutGeo
+  ) {
     const response = await apiClient.post('/payments/create-intent', {
       amount,
       currency,
       couponCode,
       shippingAddressId,
+      checkoutLatitude: geo?.checkoutLatitude,
+      checkoutLongitude: geo?.checkoutLongitude,
     });
     return response.data;
   },
@@ -62,7 +82,13 @@ export const stripeService = {
     return response.data;
   },
 
-  async createCodOrder(amount: number, currency: string = 'usd', couponCode?: string, shippingAddressId?: string) {
+  async createCodOrder(
+    amount: number,
+    currency: string = 'usd',
+    couponCode?: string,
+    shippingAddressId?: string,
+    geo?: CheckoutGeo
+  ) {
     console.log('stripeService.createCodOrder called', { amount, currency, couponCode, shippingAddressId });
     try {
       const response = await apiClient.post('/payments/create-cod-order', {
@@ -70,6 +96,8 @@ export const stripeService = {
         currency,
         couponCode,
         shippingAddressId,
+        checkoutLatitude: geo?.checkoutLatitude,
+        checkoutLongitude: geo?.checkoutLongitude,
       });
       console.log('COD order API response:', response.data);
       return response.data;

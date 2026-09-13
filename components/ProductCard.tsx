@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Product } from '@/services/productService';
+import { displayProductDescription } from '@/lib/productDescription';
 import { ProductCardGallery } from '@/components/ProductCardGallery';
 import { ProductPurchaseActions } from '@/components/ProductPurchaseActions';
 import { ProductAudienceBadge } from '@/components/ProductAudienceBadge';
@@ -21,7 +22,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   href,
   showPurchaseActions = true,
 }) => {
-  const linkHref = href ?? productHref(product.id);
+  const linkHref = href ?? productHref(product);
+  const cardDescription = displayProductDescription(product.description);
 
   return (
     <div
@@ -54,9 +56,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.name}
           </h3>
 
-          {!compact && (
+          {!compact && cardDescription && (
             <p className="text-foreground/60 text-sm mt-1 mb-2 line-clamp-2 min-h-[2.5rem]">
-              {product.description}
+              {cardDescription}
             </p>
           )}
         </Link>

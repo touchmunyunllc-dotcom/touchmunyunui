@@ -65,6 +65,12 @@ export default function Privacy() {
                     <li>Referring website addresses</li>
                     <li>Cookies and similar tracking technologies</li>
                   </ul>
+                  <p className="leading-relaxed mt-4">
+                    <strong className="text-foreground">Checkout location (optional):</strong> When you place an order,
+                    we may ask your browser for approximate device location (with your permission) to record where checkout
+                    was started. We also geocode your shipping address to approximate delivery coordinates. These are used
+                    for order fulfillment, fraud prevention, and customer support—not for advertising.
+                  </p>
                 </div>
 
                 <div>
@@ -80,6 +86,7 @@ export default function Privacy() {
                     <li>Send you marketing communications (with your consent)</li>
                     <li>Improve our website, products, and services</li>
                     <li>Detect and prevent fraud and abuse</li>
+                    <li>Compare checkout device location with geocoded shipping address when both are available</li>
                     <li>Comply with legal obligations</li>
                   </ul>
                 </div>
@@ -90,7 +97,7 @@ export default function Privacy() {
                     We do not sell your personal information. We may share your information in the following circumstances:
                   </p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li><strong className="text-foreground">Service Providers:</strong> We may share information with third-party service providers who perform services on our behalf, such as payment processing, shipping, and data analysis</li>
+                    <li><strong className="text-foreground">Service Providers:</strong> We may share information with third-party service providers who perform services on our behalf, such as payment processing, shipping, address geocoding (e.g. Mapbox, Google Maps, or OpenStreetMap/Nominatim), and data analysis</li>
                     <li><strong className="text-foreground">Legal Requirements:</strong> We may disclose information if required by law or in response to valid requests by public authorities</li>
                     <li><strong className="text-foreground">Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, your information may be transferred</li>
                     <li><strong className="text-foreground">With Your Consent:</strong> We may share information with your explicit consent</li>

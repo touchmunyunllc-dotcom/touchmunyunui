@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { addressService, Address, CreateAddressData } from '@/services/addressService';
 import { notificationService } from '@/services/notificationService';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { CountrySelect } from '@/components/CountrySelect';
+import { countryService, Country } from '@/services/countryService';
+import { postalCodePlaceholder, validatePostalCode } from '@/lib/postalCode';
+import { normalizePhoneNumber, phonePlaceholder, validatePhoneNumber } from '@/lib/phone';
 
 const inputClassName =
   'w-full px-4 py-3 border border-foreground/20 rounded-xl focus:ring-2 focus:ring-red-500/30 focus:border-red-500/40 bg-black/20 backdrop-blur-sm text-foreground placeholder-foreground/45 transition-all';
@@ -12,7 +16,7 @@ const emptyForm: CreateAddressData = {
   city: '',
   state: '',
   postalCode: '',
-  country: 'United States',
+  country: 'US',
   phone: '',
   isDefault: false,
 };
@@ -23,6 +27,7 @@ export function ProfileAddresses() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [formData, setFormData] = useState<CreateAddressData>(emptyForm);
 
   const loadAddresses = async () => {
@@ -39,6 +44,7 @@ export function ProfileAddresses() {
 
   useEffect(() => {
     void loadAddresses();
+    countryService.list().then(setCountries).catch(() => setCountries([]));
   }, []);
 
   const resetForm = () => {
@@ -81,12 +87,18 @@ export function ProfileAddresses() {
       notificationService.error('State is required');
       return false;
     }
-    if (!formData.postalCode.trim()) {
-      notificationService.error('Postal code is required');
-      return false;
-    }
     if (!formData.country.trim()) {
       notificationService.error('Country is required');
+      return false;
+    }
+    const postalError = validatePostalCode(formData.postalCode, formData.country);
+    if (postalError) {
+      notificationService.error(postalError);
+      return false;
+    }
+    const phoneError = validatePhoneNumber(formData.phone ?? '', formData.country);
+    if (phoneError) {
+      notificationService.error(phoneError);
       return false;
     }
     return true;
@@ -105,7 +117,7 @@ export function ProfileAddresses() {
         state: formData.state.trim(),
         postalCode: formData.postalCode.trim(),
         country: formData.country.trim(),
-        phone: formData.phone?.trim() || undefined,
+        phone: normalizePhoneNumber(formData.phone ?? '', formData.country) ?? formData.phone?.trim(),
         isDefault: formData.isDefault,
       };
 
@@ -231,28 +243,35 @@ export function ProfileAddresses() {
                 type="text"
                 value={formData.postalCode}
                 onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                placeholder={postalCodePlaceholder(formData.country)}
+                autoComplete="postal-code"
+                maxLength={20}
                 className={inputClassName}
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">Country <span className="text-gold-400">*</span></label>
-              <input
-                type="text"
+              <CountrySelect
                 value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                onChange={(code) => setFormData({ ...formData, country: code })}
                 className={inputClassName}
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">Phone</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">
+              Mobile number <span className="text-gold-400">*</span>
+            </label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder={phonePlaceholder(formData.country)}
+              autoComplete="tel"
               className={inputClassName}
+              required
             />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -320,7 +339,9 @@ export function ProfileAddresses() {
                   <p className="text-sm text-foreground/70">
                     {address.city}, {address.state} {address.postalCode}
                   </p>
-                  <p className="text-sm text-foreground/70">{address.country}</p>
+                  <p className="text-sm text-foreground/70">
+                    {countryService.countryName(address.country, countries) || address.country}
+                  </p>
                   {address.phone && (
                     <p className="text-sm text-foreground/60 mt-1">Phone: {address.phone}</p>
                   )}

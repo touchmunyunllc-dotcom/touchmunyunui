@@ -106,6 +106,44 @@ export function getProductGalleryImages(
   return urls.length > 0 ? urls : ['/placeholder.png'];
 }
 
+function findColorImagesKey(
+  colorImages: Record<string, string>,
+  selectedColor: string
+): string | undefined {
+  const key = selectedColor.trim().toLowerCase();
+  return Object.keys(colorImages).find((name) => name.trim().toLowerCase() === key);
+}
+
+/** PDP gallery: show the selected color's photo; never rotate through other colors' images. */
+export function getDetailGalleryImages(
+  product: Pick<Product, 'imageUrl' | 'images' | 'colorImages'>,
+  selectedColor?: string
+): string[] {
+  const all = getProductGalleryImages(product);
+  const colorImages = product.colorImages;
+  if (!selectedColor?.trim() || !colorImages || Object.keys(colorImages).length === 0) {
+    return all;
+  }
+
+  const matchedKey = findColorImagesKey(colorImages, selectedColor);
+  if (matchedKey) {
+    const url = colorImages[matchedKey]?.trim();
+    if (url) return [url];
+  }
+
+  const hero = resolveDisplayImage(product as Product, selectedColor);
+  const otherColorUrls = new Set(
+    Object.values(colorImages)
+      .map((url) => url?.trim())
+      .filter((url): url is string => Boolean(url))
+  );
+  const neutral = all.filter((url) => !otherColorUrls.has(url));
+  if (neutral.includes(hero)) {
+    return [hero, ...neutral.filter((u) => u !== hero)];
+  }
+  return hero ? [hero, ...neutral] : neutral.length > 0 ? neutral : all;
+}
+
 function normCartField(value?: string | null): string {
   return (value ?? '').trim().toLowerCase();
 }

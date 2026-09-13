@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { storeSettingsService } from '@/services/storeSettingsService';
 import { Layout } from '@/components/Layout';
 import { SEO } from '@/components/SEO';
 import { useCart } from '@/context/CartContext';
@@ -20,7 +21,17 @@ export default function Cart() {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [shippingHint, setShippingHint] = useState('Calculated at checkout');
   const adminShoppingBlocked = isAuthenticated && isAdminUser(user);
+
+  useEffect(() => {
+    storeSettingsService
+      .getShipping()
+      .then((s) =>
+        setShippingHint(`US $${s.standardUsd.toFixed(0)} · International $${s.internationalUsd.toFixed(0)}`)
+      )
+      .catch(() => setShippingHint('Calculated at checkout'));
+  }, []);
   const cartLines = useMemo(() => dedupeGuestCartLines(items), [items]);
   const lineCount = cartLines.length;
 
@@ -194,9 +205,9 @@ export default function Cart() {
                     <span>Subtotal</span>
                     <span className="font-semibold text-foreground">${subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-foreground/70">
+                  <div className="flex justify-between text-foreground/70 gap-3">
                     <span>Shipping</span>
-                    <span className="font-semibold text-gold-500">Free</span>
+                    <span className="font-semibold text-foreground/80 text-right text-sm">{shippingHint}</span>
                   </div>
                   <div className="flex justify-between text-foreground/70">
                     <span>Tax</span>

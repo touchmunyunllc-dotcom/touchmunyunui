@@ -2,6 +2,7 @@ import { GetServerSideProps } from 'next';
 
 interface ProductData {
   id: string;
+  slug?: string;
   name: string;
   imageUrl: string;
   updatedAt: string;
@@ -47,7 +48,7 @@ function generateSitemap(products: ProductData[] = []) {
   const productEntries = products
     .map(
       (product) => `  <url>
-    <loc>${baseUrl}/products/${product.id}</loc>
+    <loc>${baseUrl}/products/${product.slug?.trim() || product.id}</loc>
     <lastmod>${product.updatedAt || currentDate}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>${
