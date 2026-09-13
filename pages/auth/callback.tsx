@@ -16,7 +16,11 @@ export default function AuthCallback() {
 
     const fetchUser = async () => {
       try {
-        const userData = await authService.getCurrentUser();
+        const userData = await authService.bootstrapSession();
+        if (!userData) {
+          router.push('/login?error=auth_failed');
+          return;
+        }
         setUser(userData);
         if (userData.role === 'admin') {
           router.push('/admin');
@@ -43,4 +47,3 @@ export default function AuthCallback() {
     </Layout>
   );
 }
-

@@ -55,6 +55,25 @@ export const authService = {
     }
   },
 
+  /** After OAuth redirect: refresh cookie → access token, then load profile. */
+  async bootstrapSession(): Promise<LoginResponse['user'] | null> {
+    const existing = await this.getCurrentUser();
+    if (existing) {
+      return existing;
+    }
+
+    try {
+      const refreshRes = await apiClient.post<{ token: string }>('/auth/refresh');
+      if (refreshRes.data?.token) {
+        tokenStorage.set(refreshRes.data.token);
+      }
+      return await this.getCurrentUser();
+    } catch {
+      tokenStorage.clear();
+      return null;
+    }
+  },
+
   async requestPasswordReset(email: string): Promise<void> {
     await apiClient.post('/auth/password-reset/request', { email });
   },

@@ -58,6 +58,10 @@ export default function Profile() {
   const fetchCurrentUser = async () => {
     try {
       const currentUser = await authService.getCurrentUser();
+      if (!currentUser) {
+        router.push('/login');
+        return;
+      }
       setFormData({
         name: currentUser.name || '',
         email: currentUser.email || '',
