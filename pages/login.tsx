@@ -53,7 +53,7 @@ export default function Login() {
     setLoading(true);
     setAuthError(null);
     try {
-      await login(email.trim(), password);
+      await login(email.trim().toLowerCase(), password);
       notificationService.success('Welcome back!');
     } catch (error) {
       const errorMessage =

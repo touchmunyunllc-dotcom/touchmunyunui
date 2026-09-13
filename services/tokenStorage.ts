@@ -1,22 +1,49 @@
 const ACCESS_TOKEN_KEY = 'tm_access_token';
 
+function readStorage(): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** Migrate one-time from sessionStorage (older builds). */
+function migrateFromSessionStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const legacy = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (legacy && !localStorage.getItem(ACCESS_TOKEN_KEY)) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, legacy);
+    }
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export const tokenStorage = {
   get(): string | null {
-    if (typeof window === 'undefined') return null;
+    migrateFromSessionStorage();
+    const storage = readStorage();
+    if (!storage) return null;
     try {
-      return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+      return storage.getItem(ACCESS_TOKEN_KEY);
     } catch {
       return null;
     }
   },
 
   set(token: string | null | undefined): void {
-    if (typeof window === 'undefined') return;
+    migrateFromSessionStorage();
+    const storage = readStorage();
+    if (!storage) return;
     try {
       if (!token) {
-        sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+        storage.removeItem(ACCESS_TOKEN_KEY);
       } else {
-        sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
+        storage.setItem(ACCESS_TOKEN_KEY, token);
       }
     } catch {
       // ignore quota / private mode

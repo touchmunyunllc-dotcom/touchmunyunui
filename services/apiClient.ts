@@ -6,8 +6,8 @@ import { getApiErrorMessage } from '@/lib/apiError';
 const DEBUG_API = process.env.NEXT_PUBLIC_DEBUG_API === 'true';
 
 const apiClient = axios.create({
-  // Browser: same-origin /api (Next rewrite). SSR: absolute Render URL.
-  baseURL: typeof window !== 'undefined' ? '/api' : getApiBaseUrl(),
+  // Direct API URL (CORS). Avoids Vercel /api rewrite issues on POST auth.
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

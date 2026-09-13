@@ -33,9 +33,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     authService
       .getCurrentUser()
       .then((userData) => setUser(userData))
-      .catch(() => {
-        setUser(null);
-      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -45,6 +45,11 @@ export function getApiErrorMessage(
   }
 
   const status = axiosError.response?.status;
+  if (status === 401) {
+    return fallback === 'Something went wrong. Please try again.'
+      ? 'Invalid email or password. Use the same site where you registered (production vs local), or reset your password.'
+      : fallback;
+  }
   if (status === 403) return 'You do not have permission to perform this action.';
   if (status === 404) return 'The requested resource was not found.';
   if (status === 429) return 'Too many requests. Please wait a moment and try again.';

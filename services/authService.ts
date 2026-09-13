@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { tokenStorage } from './tokenStorage';
 
 export interface LoginResponse {
   token: string;
@@ -38,9 +39,20 @@ export const authService = {
     await apiClient.post('/auth/logout');
   },
 
-  async getCurrentUser() {
-    const response = await apiClient.get('/auth/me');
-    return response.data;
+  /** Returns null when logged out — does not call /auth/me without a stored access token. */
+  async getCurrentUser(): Promise<LoginResponse['user'] | null> {
+    const token = tokenStorage.get();
+    if (!token?.trim()) {
+      return null;
+    }
+
+    try {
+      const response = await apiClient.get<LoginResponse['user']>('/auth/me');
+      return response.data;
+    } catch {
+      tokenStorage.clear();
+      return null;
+    }
   },
 
   async requestPasswordReset(email: string): Promise<void> {

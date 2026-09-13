@@ -55,6 +55,8 @@ function cspConnectSrc() {
   } else if (apiBaseUrl) {
     parts.push(apiBaseUrl);
   }
+  // Browser may call Render directly (see apiClient baseURL).
+  parts.push(DEFAULT_API_BASE);
   return parts.join(' ');
 }
 
