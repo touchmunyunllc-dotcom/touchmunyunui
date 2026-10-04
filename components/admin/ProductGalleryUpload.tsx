@@ -2,6 +2,7 @@ import { ChangeEvent, useRef } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { imageService } from '@/services/imageService';
 import { notificationService } from '@/services/notificationService';
+import { getApiErrorMessage } from '@/lib/apiError';
 
 type ProductGalleryUploadProps = {
   images: string[];
@@ -48,11 +49,11 @@ export function ProductGalleryUpload({
       notificationService.success(
         uploaded.length === 1 ? 'Image uploaded' : `${uploaded.length} images uploaded`
       );
-    } catch {
+    } catch (error) {
       if (uploaded.length > 0) {
         onChange([...images, ...uploaded]);
       }
-      notificationService.error('Failed to upload one or more images');
+      notificationService.error(getApiErrorMessage(error, 'Failed to upload one or more images'));
     } finally {
       onUploadingChange(false);
     }

@@ -18,8 +18,8 @@ export const imageService = {
       if (cloudName && preset) {
         try {
           return await imageService.uploadToCloudinary(file);
-        } catch {
-          throw new Error(getApiErrorMessage(error));
+        } catch (fallbackError) {
+          throw new Error(getApiErrorMessage(error, getApiErrorMessage(fallbackError)));
         }
       }
       throw new Error(getApiErrorMessage(error));
@@ -40,7 +40,13 @@ export const imageService = {
       body: formData,
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as { secure_url?: string; error?: { message?: string } };
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Cloudinary upload failed');
+    }
+    if (!data.secure_url) {
+      throw new Error('Cloudinary did not return an image URL');
+    }
     return data.secure_url;
   },
 };

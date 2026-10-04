@@ -46,9 +46,16 @@ export function getApiErrorMessage(
 
   const status = axiosError.response?.status;
   if (status === 401) {
-    return fallback === 'Something went wrong. Please try again.'
-      ? 'Invalid email or password. Use the same site where you registered (production vs local), or reset your password.'
-      : fallback;
+    if (fallback !== 'Something went wrong. Please try again.') {
+      return fallback;
+    }
+
+    const requestUrl = String(axiosError.config?.url ?? '');
+    if (requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register')) {
+      return 'Invalid email or password. If you never set a password, use Forgot password. Otherwise confirm you are on the live site (not local dev with a production account).';
+    }
+
+    return 'Your session expired. Please sign in again.';
   }
   if (status === 403) return 'You do not have permission to perform this action.';
   if (status === 404) return 'The requested resource was not found.';

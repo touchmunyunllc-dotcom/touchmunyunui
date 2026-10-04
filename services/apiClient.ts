@@ -72,8 +72,14 @@ apiClient.interceptors.response.use(
       if (!originalRequest._retry && !url.includes('/auth/refresh')) {
         originalRequest._retry = true;
         return apiClient
-          .post('/auth/refresh')
-          .then(() => apiClient(originalRequest))
+          .post<{ token?: string }>('/auth/refresh')
+          .then((refreshResponse) => {
+            const newToken = refreshResponse.data?.token;
+            if (newToken) {
+              tokenStorage.set(newToken);
+            }
+            return apiClient(originalRequest);
+          })
           .catch(() => {
             tokenStorage.clear();
             if (typeof window !== 'undefined') {
