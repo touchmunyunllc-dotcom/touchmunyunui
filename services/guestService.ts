@@ -45,6 +45,7 @@ export interface GuestCheckoutResponse {
   clientSecret: string;
   paymentIntentId: string;
   orderId: string | null;
+  captchaWarning?: string | null;
 }
 
 export interface GuestOrderLine {

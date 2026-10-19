@@ -180,6 +180,9 @@ export default function GuestCheckoutPage() {
         },
       });
 
+      if (res.captchaWarning) {
+        notificationService.info(res.captchaWarning);
+      }
       setClientSecret(res.clientSecret);
       setShowPaymentForm(true);
     } catch (e) {
